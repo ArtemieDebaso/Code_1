@@ -1,0 +1,238 @@
+{% extends "layout.html" %}
+
+{% block title %}Мои результаты{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню -->
+    <div class="col-md-3 sidebar">
+        <h4 class="mb-3">Панель студента</h4>
+        <div class="nav flex-column nav-pills">
+            <a class="nav-link" href="/student/dashboard">
+                <i class="bi bi-speedometer2 me-2"></i>Обзор
+            </a>
+            <a class="nav-link" href="/student/tests">
+                <i class="bi bi-journal-text me-2"></i>Доступные тесты
+            </a>
+            <a class="nav-link active" href="/student/results">
+                <i class="bi bi-bar-chart me-2"></i>Мои результаты
+            </a>
+        </div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="col-md-9">
+        <div class="page-title d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-bar-chart me-2"></i>Мои результаты</h2>
+            <div class="input-group" style="width: 250px;">
+                <input type="text" class="form-control" placeholder="Поиск по тестам...">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Статистика -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="display-4 mb-2">{{ stats.tests_completed }}</div>
+                        <div class="text-muted">Пройдено тестов</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="display-4 mb-2">{{ "%.1f"|format(stats.average_grade) }}</div>
+                        <div class="text-muted">Средний балл</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        {% if stats.tests_completed > 0 %}
+                            {% set avg_percent = stats.average_percent|float %}
+                            {% set avg_grade = stats.average_grade|float %}
+                            {% if avg_grade >= 4.5 %}
+                                {% set grade_text = 'Отлично' %}
+                                {% set grade_class = 'success' %}
+                            {% elif avg_grade >= 3.5 %}
+                                {% set grade_text = 'Хорошо' %}
+                                {% set grade_class = 'primary' %}
+                            {% elif avg_grade >= 2.5 %}
+                                {% set grade_text = 'Удовлетворительно' %}
+                                {% set grade_class = 'warning' %}
+                            {% else %}
+                                {% set grade_text = 'Неудовлетворительно' %}
+                                {% set grade_class = 'danger' %}
+                            {% endif %}
+                            <div class="display-4 mb-2 text-{{ grade_class }}">{{ "%.1f"|format(avg_grade) }}</div>
+                            <div class="text-muted">Средняя оценка</div>
+                            <div class="mt-2">
+                                <span class="badge bg-{{ grade_class }}">{{ grade_text }}</span>
+                            </div>
+                        {% else %}
+                            <div class="display-4 mb-2 text-muted">—</div>
+                            <div class="text-muted">Средняя оценка</div>
+                            <div class="mt-2">
+                                <span class="badge bg-secondary">Нет оценок</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Фильтры -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Сортировать по</label>
+                        <select class="form-select" id="sort-results">
+                            <option value="date_desc" selected>Дате (сначала новые)</option>
+                            <option value="date_asc">Дате (сначала старые)</option>
+                            <option value="score_desc">Баллам (по убыванию)</option>
+                            <option value="score_asc">Баллам (по возрастанию)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Показать тесты</label>
+                        <select class="form-select" id="filter-test-type">
+                            <option value="all" selected>Все тесты</option>
+                            <option value="passed">Пройденные успешно</option>
+                            <option value="failed">Непройденные</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Период</label>
+                        <select class="form-select" id="filter-time-period">
+                            <option value="all" selected>За все время</option>
+                            <option value="month">За последний месяц</option>
+                            <option value="week">За последнюю неделю</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Таблица результатов -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">История тестирования</h5>
+            </div>
+            <div class="card-body">
+                {% if results %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Тест</th>
+                                <th scope="col">Дата</th>
+                                <th scope="col" class="text-center">Оценка</th>
+                                <th scope="col" class="text-center">Ответы</th>
+                                <th scope="col" class="text-center">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">{{ result.test_title }}</div>
+                                            <small class="text-muted">{{ result.category|default('Без категории') }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ result.completion_date|strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td class="text-center">
+                                    {% set percent = (result.score / result.max_score * 100)|int %}
+                                    {% if result.grade >= 4.5 %}
+                                        {% set grade_class = 'success' %}
+                                    {% elif result.grade >= 3.5 %}
+                                        {% set grade_class = 'primary' %}
+                                    {% elif result.grade >= 2.5 %}
+                                        {% set grade_class = 'warning' %}
+                                    {% else %}
+                                        {% set grade_class = 'danger' %}
+                                    {% endif %}
+                                    
+                                    <div>
+                                        <span class="badge bg-{{ grade_class }}">{{ result.grade }}</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">{{ percent }}%</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">{{ result.correct_answers }}/{{ result.total_questions }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="/student/results/{{ result.id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Детали
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Пагинация -->
+                {% if results|length > 10 %}
+                <nav class="mt-4" aria-label="Навигация по страницам">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>У вас пока нет оценок. Пройдите доступные тесты или дождитесь, пока вам назначат новые.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Логика для фильтров и сортировки
+        const sortSelect = document.getElementById('sort-results');
+        const typeSelect = document.getElementById('filter-test-type');
+        const periodSelect = document.getElementById('filter-time-period');
+        
+        function updateFilters() {
+            // Здесь будет логика обновления списка на основе выбранных фильтров
+            // В реальном приложении это должно отправлять AJAX-запрос или перенаправлять на URL с параметрами
+            console.log('Сортировка:', sortSelect.value);
+            console.log('Тип тестов:', typeSelect.value);
+            console.log('Период:', periodSelect.value);
+        }
+        
+        if (sortSelect) sortSelect.addEventListener('change', updateFilters);
+        if (typeSelect) typeSelect.addEventListener('change', updateFilters);
+        if (periodSelect) periodSelect.addEventListener('change', updateFilters);
+    });
+</script>
+{% endblock %}

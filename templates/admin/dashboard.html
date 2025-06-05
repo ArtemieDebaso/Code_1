@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+
+{% block title %}Панель администратора{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню -->
+    <div class="col-md-3 sidebar">
+        <h4 class="mb-3">Панель администратора</h4>
+        <div class="nav flex-column nav-pills">
+            <a class="nav-link active" href="/admin/dashboard">
+                <i class="bi bi-speedometer2 me-2"></i>Обзор
+            </a>
+            <a class="nav-link" href="/admin/users">
+                <i class="bi bi-people me-2"></i>Управление пользователями
+            </a>
+            <a class="nav-link" href="/admin/groups">
+                <i class="bi bi-collection me-2"></i>Управление группами
+            </a>
+            <a class="nav-link" href="/admin/tests">
+                <i class="bi bi-journal-text me-2"></i>Управление тестами
+            </a>
+            <a class="nav-link" href="/admin/backup">
+                <i class="bi bi-cloud-arrow-down me-2"></i>Резервное копирование
+            </a>
+        </div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="col-md-9">
+        <div class="page-title d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-speedometer2 me-2"></i>Обзор системы</h2>
+            <span class="badge bg-primary">Администратор</span>
+        </div>
+        
+        <!-- Карточки с метриками -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-people text-primary" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Пользователи</h5>
+                        <p class="card-text display-6 fw-bold text-primary">{{ users_count }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="/admin/users" class="btn btn-sm btn-outline-primary">Управление</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-question-circle text-success" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Тесты</h5>
+                        <p class="card-text display-6 fw-bold text-success">{{ tests_count }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="/admin/tests" class="btn btn-sm btn-outline-success">Просмотр</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-collection text-info" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Группы</h5>
+                        <p class="card-text display-6 fw-bold text-info">{{ groups_count }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="/admin/groups" class="btn btn-sm btn-outline-info">Управление</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Системная информация -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Системная информация</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <tbody>
+                        <tr>
+                            <th scope="row" style="width: 30%;">Версия системы</th>
+                            <td>1.0.0 (Beta)</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Последнее обновление</th>
+                            <td>{{ '%Y-%m-%d %H:%M:%S'|strftime }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Состояние системы</th>
+                            <td><span class="badge bg-success">Активна</span></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Последняя авторизация</th>
+                            <td>{{ '%Y-%m-%d %H:%M:%S'|strftime }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Быстрые действия -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="/admin/users?showModal=add" class="btn btn-outline-primary d-block">
+                            <i class="bi bi-person-plus me-2"></i>Добавить пользователя
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="/admin/backup" class="btn btn-outline-dark d-block">
+                            <i class="bi bi-cloud-download me-2"></i>Создать резервную копию
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

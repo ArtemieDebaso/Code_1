@@ -1,0 +1,450 @@
+{% extends "layout.html" %}
+
+{% block title %}Аналитика{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню -->
+    <div class="col-md-3 sidebar">
+        <h4 class="mb-3">Панель преподавателя</h4>
+        <div class="nav flex-column nav-pills">
+            <a class="nav-link" href="/teacher/dashboard">
+                <i class="bi bi-speedometer2 me-2"></i>Обзор
+            </a>
+            <a class="nav-link" href="/teacher/tests">
+                <i class="bi bi-journal-text me-2"></i>Мои тесты
+            </a>
+            <a class="nav-link active" href="/teacher/analytics">
+                <i class="bi bi-graph-up me-2"></i>Аналитика
+            </a>
+            <a class="nav-link" href="/teacher/assign">
+                <i class="bi bi-people me-2"></i>Назначить тест
+            </a>
+        </div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="col-md-9">
+        <div class="page-title d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-graph-up me-2"></i>Аналитика и результаты</h2>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-download me-1"></i> Экспорт
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-excel me-2"></i>Excel</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-pdf me-2"></i>PDF</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-printer me-2"></i>Печать</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Общая статистика -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-calculator text-success" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Средний балл</h5>
+                        <p class="card-text display-5 fw-bold text-success">{{ analytics.average_score }}</p>
+                        <!-- Убрали комментарий о 4-балльной системе -->
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-journal-check text-primary" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Завершенных тестов</h5>
+                        <p class="card-text display-5 fw-bold text-primary">{{ analytics.completed_tests|default('12') }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-people text-info" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Студентов прошло</h5>
+                        <p class="card-text display-5 fw-bold text-info">{{ analytics.students_completed|default('8') }}/{{ analytics.total_students|default('26') }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-stopwatch text-warning" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Среднее время</h5>
+                        <p class="card-text display-5 fw-bold text-warning">{{ analytics.average_time|default('28') }}</p>
+                        <span class="text-muted">минут</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Графики для аналитики -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Распределение баллов</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height:250px;">
+                            <canvas id="gradesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Активность по тестам</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height:250px;">
+                            <canvas id="testsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Фильтры -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Тест</label>
+                        <select class="form-select" id="testFilter">
+                            <option selected value="">Все тесты</option>
+                            <option value="test1">Основы программирования</option>
+                            <option value="test2">Базы данных SQL</option>
+                            <option value="test3">Основы безопасности</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Группа</label>
+                        <select class="form-select" id="groupFilter">
+                            <option selected value="">Все группы</option>
+                            <option value="group1">Группа A-101</option>
+                            <option value="group2">Группа B-201</option>
+                            <option value="group3">Группа C-301</option>
+                            <option value="group4">Группа D-401</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Период</label>
+                        <select class="form-select">
+                            <option selected>За все время</option>
+                            <option>Последний месяц</option>
+                            <option>Последняя неделя</option>
+                            <option>Сегодня</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Таблица результатов -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-table me-2"></i>Детальные результаты</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Студент</th>
+                                <th>Тест</th>
+                                <th>Результат</th>
+                                <th>Время выполнения</th>
+                                <th>Дата</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Иван Студентов</td>
+                                <td>Основы программирования</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="ms-2">85/100</span>
+                                    </div>
+                                </td>
+                                <td>32 мин</td>
+                                <td>2025-05-01</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Алексей Смирнов</td>
+                                <td>Базы данных SQL</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 74%;" aria-valuenow="74" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="ms-2">74/100</span>
+                                    </div>
+                                </td>
+                                <td>28 мин</td>
+                                <td>2025-05-03</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Мария Иванова</td>
+                                <td>Базы данных SQL</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 92%;" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="ms-2">92/100</span>
+                                    </div>
+                                </td>
+                                <td>35 мин</td>
+                                <td>2025-05-03</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Дмитрий Козлов</td>
+                                <td>Основы безопасности</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 88%;" aria-valuenow="88" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="ms-2">88/100</span>
+                                    </div>
+                                </td>
+                                <td>25 мин</td>
+                                <td>2025-05-05</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Анна Соколова</td>
+                                <td>Основы безопасности</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 78%;" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="ms-2">78/100</span>
+                                    </div>
+                                </td>
+                                <td>22 мин</td>
+                                <td>2025-05-05</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center pagination-sm mb-0">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Графики аналитики
+    document.addEventListener('DOMContentLoaded', function() {
+        // Добавляем обработчики фильтров для динамического изменения данных
+        document.getElementById('groupFilter').addEventListener('change', updateAnalytics);
+        document.getElementById('testFilter').addEventListener('change', updateAnalytics);
+        
+        // Функция для обновления аналитики на основе выбранных фильтров
+        function updateAnalytics() {
+            const selectedGroup = document.getElementById('groupFilter').value;
+            const selectedTest = document.getElementById('testFilter').value;
+            
+            // В реальном приложении тут будет запрос на сервер для получения отфильтрованных данных
+            // Сейчас просто имитируем изменение данных для демонстрации
+            console.log('Применены фильтры:', {группа: selectedGroup, тест: selectedTest});
+            
+            // Если выбрана группа, меняем данные графика оценок
+            if (selectedGroup) {
+                // Разные распределения по группам (имитация данных)
+                const gradeData = {
+                    'group1': [2, 1, 3, 2, 5, 3],
+                    'group2': [0, 1, 2, 3, 4, 2],
+                    'group3': [0, 0, 3, 4, 5, 3], 
+                    'group4': [0, 1, 4, 6, 4, 2]
+                };
+                
+                // Обновляем данные графика
+                gradesChart.data.datasets[0].data = gradeData[selectedGroup] || [1, 2, 4, 6, 8, 5];
+                gradesChart.update();
+                
+                // Обновляем общие показатели
+                const gradeSummary = {
+                    'group1': '80',
+                    'group2': '86',
+                    'group3': '90',
+                    'group4': '82'
+                };
+                
+                const completionSummary = {
+                    'group1': ['1', '1'],   // 1 из 1 студентов
+                    'group2': ['3', '5'],   // 3 из 5 студентов
+                    'group3': ['4', '6'],   // 4 из 6 студентов
+                    'group4': ['5', '6']    // 5 из 6 студентов
+                };
+                
+                // Обновляем данные на карточках
+                document.querySelector('.card-text.display-5.fw-bold.text-success').textContent = gradeSummary[selectedGroup] || '85';
+                
+                const completion = completionSummary[selectedGroup] || ['8', '26'];
+                document.querySelector('.card-text.display-5.fw-bold.text-info').textContent = completion[0] + '/' + completion[1];
+            }
+        }
+        // График распределения по процентам выполнения
+        const gradesCtx = document.getElementById('gradesChart').getContext('2d');
+        const gradesChart = new Chart(gradesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['2.0-2.5', '2.6-3.0', '3.1-3.5', '3.6-4.0', '4.1-4.5', '4.6-5.0'],
+                datasets: [{
+                    label: 'Количество студентов',
+                    data: [1, 2, 4, 6, 8, 5],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',  // Красный - очень низкий результат
+                        'rgba(255, 159, 64, 0.6)',  // Оранжевый - низкий результат
+                        'rgba(255, 205, 86, 0.6)',  // Желтый - средний результат
+                        'rgba(75, 192, 192, 0.6)',  // Бирюзовый - хороший результат
+                        'rgba(54, 162, 235, 0.6)',  // Синий - очень хороший результат
+                        'rgba(153, 102, 255, 0.6)'  // Фиолетовый - отличный результат
+                    ],
+                    borderColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 159, 64)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)',
+                        'rgb(54, 162, 235)',
+                        'rgb(153, 102, 255)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return 'Диапазон оценок: ' + tooltipItems[0].label;
+                            },
+                            label: function(context) {
+                                return 'Студентов: ' + context.raw;
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: '4-балльная система (2-5)',
+                        font: {
+                            size: 14
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        },
+                        title: {
+                            display: true,
+                            text: 'Количество студентов'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Диапазон оценок'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // График активности по тестам
+        const testsCtx = document.getElementById('testsChart').getContext('2d');
+        const testsChart = new Chart(testsCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Основы программирования', 'Базы данных SQL', 'Основы безопасности'],
+                datasets: [{
+                    label: 'Количество прохождений',
+                    data: [8, 7, 11],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(201, 203, 207, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgb(54, 162, 235)',
+                        'rgb(75, 192, 192)',
+                        'rgb(153, 102, 255)',
+                        'rgb(201, 203, 207)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    });
+</script>
+{% endblock %}

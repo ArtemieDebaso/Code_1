@@ -1,0 +1,611 @@
+{% extends "layout.html" %}
+
+{% block title %}Прохождение теста{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню -->
+    <div class="col-md-3 sidebar">
+        <h4 class="mb-3">Панель студента</h4>
+        <div class="nav flex-column nav-pills">
+            <a class="nav-link" href="/student/dashboard">
+                <i class="bi bi-speedometer2 me-2"></i>Обзор
+            </a>
+            <a class="nav-link active" href="/student/tests">
+                <i class="bi bi-journal-text me-2"></i>Доступные тесты
+            </a>
+            <a class="nav-link" href="/student/results">
+                <i class="bi bi-bar-chart me-2"></i>Мои результаты
+            </a>
+        </div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="col-md-9">
+        <div class="page-title d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-journal-text me-2"></i>{{ test.title }}</h2>
+            <div class="timer-container">
+                <div class="card bg-light">
+                    <div class="card-body p-2 text-center">
+                        <div id="test-timer" class="fw-bold">
+                            <i class="bi bi-clock me-1"></i><span id="timer-value">{{ test.time_limit|default('45:00') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span>Внимательно прочитайте каждый вопрос и выберите правильный ответ. После завершения теста нажмите кнопку "Завершить тест".</span>
+            <div class="mt-2">
+                <strong>Максимальное количество баллов:</strong> {{ test.max_score }} б.
+            </div>
+        </div>
+        
+        <form id="test-form" action="/student/tests/submit/{{ test.id }}" method="post" onsubmit="preventCopy()">
+            <input type="hidden" name="test_id" value="{{ test.id }}">
+            <input type="hidden" name="start_time" id="start_time">
+            <div id="questions-container">
+                {% if test.questions %}
+                {% for question in test.questions %}
+                <div class="card mb-4 question-card">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="mb-0">Вопрос {{ loop.index }} из {{ test.questions|length }}</h5>
+                            <span class="badge bg-primary">{{ question.points }} баллов</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="question-text mb-3">
+                            <p>{{ question.text }}</p>
+                        </div>
+                        
+                        {% if question.type == 'single' %}
+                        <!-- Вопрос с одним вариантом ответа -->
+                        <div class="answers-container">
+                            {% for option in question.options %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="option_{{ question.id }}_{{ loop.index }}" value="{{ loop.index0 }}">
+                                <label class="form-check-label" for="option_{{ question.id }}_{{ loop.index }}">
+                                    {{ option.text }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% elif question.type == 'multiple' %}
+                        <!-- Вопрос с несколькими вариантами ответа -->
+                        <div class="answers-container">
+                            {% for option in question.options %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="question_{{ question.id }}[]" id="option_{{ question.id }}_{{ loop.index }}" value="{{ loop.index0 }}">
+                                <label class="form-check-label" for="option_{{ question.id }}_{{ loop.index }}">
+                                    {{ option.text }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% elif question.type == 'text' %}
+                        <!-- Вопрос с текстовым ответом -->
+                        <div class="answers-container">
+                            <div class="mb-3">
+                                <textarea class="form-control" name="question_{{ question.id }}" rows="3" placeholder="Введите ваш ответ здесь"></textarea>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span>В этом тесте нет вопросов.</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#cancelTestModal">
+                            <i class="bi bi-x-circle me-2"></i>Отменить тест
+                        </button>
+                        <button type="button" id="finish-test-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#finishTestModal">
+                            <i class="bi bi-check-circle me-2"></i>Завершить тест
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно завершения теста -->
+<div class="modal fade" id="finishTestModal" tabindex="-1" aria-labelledby="finishTestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="finishTestModalLabel">Завершение теста</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="test-confirmation">
+                    <p>Вы уверены, что хотите завершить тест? После завершения вы не сможете изменить свои ответы.</p>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <span id="unanswered-questions-info">Проверка ответов...</span>
+                    </div>
+                </div>
+                <div id="test-results" style="display: none;">
+                    <h4 class="mb-3 text-center">Результаты теста</h4>
+                    <div class="alert alert-info">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>Правильные ответы:</strong>
+                            <span id="correct-answers-count">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>Всего вопросов:</strong>
+                            <span id="total-questions-count">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>Заработано баллов:</strong>
+                            <span id="earned-points">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Оценка:</strong>
+                            <span id="test-grade" class="badge bg-success fs-6">5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div id="confirmation-buttons">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Вернуться к тесту</button>
+                    <button type="button" class="btn btn-primary" id="confirm-finish">Завершить тест</button>
+                </div>
+                <div id="results-buttons" style="display: none;">
+                    <a href="{{ url_for('student_tests') }}" class="btn btn-secondary">К списку тестов</a>
+                    <a href="{{ url_for('student_results') }}" class="btn btn-primary">Просмотр всех результатов</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно отмены теста -->
+<div class="modal fade" id="cancelTestModal" tabindex="-1" aria-labelledby="cancelTestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelTestModalLabel">Отменить тест</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите отменить тест? Все ваши ответы будут потеряны.</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span>Это действие нельзя отменить.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Вернуться к тесту</button>
+                <a href="/student/tests" class="btn btn-danger">Отменить тест</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Предотвращение копирования текста для студентов
+    function preventCopy() {
+        const questionsContainer = document.getElementById('questions-container');
+        if (questionsContainer) {
+            questionsContainer.addEventListener('copy', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            questionsContainer.addEventListener('cut', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            questionsContainer.style.userSelect = 'none';
+        }
+    }
+    
+    // Вызываем функцию при загрузке страницы
+    window.addEventListener('DOMContentLoaded', function() {
+        preventCopy();
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Устанавливаем время начала теста
+        var startTimeField = document.getElementById('start_time');
+        var currentTime = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        startTimeField.value = currentTime;
+        console.log("Установлено время начала теста:", currentTime);
+        
+        // Сохраняем время в сессии
+        sessionStorage.setItem('test_start_time', currentTime);
+        
+        // Флаг отправки теста
+        window.testSubmitted = false;
+        
+        // Функция для сохранения ответов в localStorage
+        function saveUserAnswers() {
+            if (window.testSubmitted) return; // Не сохраняем, если тест уже отправлен
+            
+            const answers = {};
+            
+            // Обработка радиокнопок (single)
+            document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                const name = radio.getAttribute('name');
+                const value = radio.getAttribute('value');
+                answers[name] = value;
+            });
+            
+            // Обработка чекбоксов (multiple)
+            const checkboxGroups = {};
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                const name = checkbox.getAttribute('name').replace('[]', '');
+                if (!checkboxGroups[name]) {
+                    checkboxGroups[name] = [];
+                }
+                if (checkbox.checked) {
+                    const value = checkbox.getAttribute('value');
+                    checkboxGroups[name].push(value);
+                }
+            });
+            
+            // Добавление групп чекбоксов в answers
+            Object.keys(checkboxGroups).forEach(name => {
+                answers[name] = checkboxGroups[name];
+            });
+            
+            // Обработка текстовых полей
+            document.querySelectorAll('textarea').forEach(textarea => {
+                const name = textarea.getAttribute('name');
+                answers[name] = textarea.value;
+            });
+            
+            // Сохранение в localStorage
+            localStorage.setItem('test_{{ test.id }}_answers', JSON.stringify(answers));
+        }
+        
+        // Функция для восстановления ответов из localStorage
+        function restoreUserAnswers() {
+            const storedAnswers = localStorage.getItem('test_{{ test.id }}_answers');
+            if (!storedAnswers) return;
+            
+            try {
+                const answers = JSON.parse(storedAnswers);
+                
+                // Восстановление радиокнопок (single)
+                Object.keys(answers).forEach(name => {
+                    if (name.startsWith('question_') && !name.includes('[]')) {
+                        const value = answers[name];
+                        const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+                        if (radio) radio.checked = true;
+                    }
+                });
+                
+                // Восстановление чекбоксов (multiple)
+                Object.keys(answers).forEach(name => {
+                    if (name.startsWith('question_') && Array.isArray(answers[name])) {
+                        answers[name].forEach(value => {
+                            const checkbox = document.querySelector(`input[name="${name}[]"][value="${value}"]`);
+                            if (checkbox) checkbox.checked = true;
+                        });
+                    }
+                });
+                
+                // Восстановление текстовых полей
+                Object.keys(answers).forEach(name => {
+                    if (name.startsWith('question_')) {
+                        const textarea = document.querySelector(`textarea[name="${name}"]`);
+                        if (textarea && typeof answers[name] === 'string') {
+                            textarea.value = answers[name];
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Ошибка при восстановлении ответов:', e);
+                localStorage.removeItem('test_{{ test.id }}_answers');
+            }
+        }
+        
+        // Отслеживание изменений и сохранение ответов
+        document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+            input.addEventListener('change', saveUserAnswers);
+        });
+        
+        document.querySelectorAll('textarea').forEach(textarea => {
+            textarea.addEventListener('input', saveUserAnswers);
+            textarea.addEventListener('blur', saveUserAnswers);
+        });
+        
+        // Таймер теста
+        function startTimer(duration, display) {
+            let timer = duration, minutes, seconds;
+            const interval = setInterval(function () {
+                // Сохраняем оставшееся время в localStorage
+                localStorage.setItem('test_{{ test.id }}_remaining_time', timer);
+                
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                // Предупреждение за 5 минут до конца
+                if (timer === 300) {
+                    const timerContainer = document.getElementById('test-timer');
+                    if (timerContainer) {
+                        timerContainer.classList.add('text-warning');
+                        timerContainer.insertAdjacentHTML('afterend', '<div class="alert alert-warning mt-2">Осталось 5 минут! Завершите тест вовремя.</div>');
+                    }
+                }
+                
+                if (--timer < 0) {
+                    clearInterval(interval);
+                    
+                    // Выводим сообщение о завершении времени
+                    const timerDisplay = document.getElementById('timer-value');
+                    if (timerDisplay) {
+                        timerDisplay.textContent = "00:00";
+                        timerDisplay.parentNode.classList.add('text-danger');
+                        timerDisplay.parentNode.parentNode.insertAdjacentHTML('afterend', 
+                            '<div class="alert alert-danger mt-2">Время истекло! Тест будет автоматически завершен через 30 секунд.</div>');
+                    }
+                    
+                    // Автоматическое завершение теста через 30 секунд
+                    setTimeout(function() {
+                        // Показываем уведомление
+                        alert("Время истекло! Тест автоматически завершается.");
+                        
+                        // Отправляем форму
+                        console.log("Автоматическое завершение теста по истечении времени");
+                        window.testSubmitted = true;
+                        localStorage.removeItem('test_{{ test.id }}_answers');
+                        localStorage.removeItem('test_{{ test.id }}_remaining_time');
+                        document.getElementById('test-form').submit();
+                    }, 30000); // 30 секунд
+                }
+            }, 1000);
+            
+            // Сохраняем ссылку на интервал для возможной остановки
+            window.testTimerInterval = interval;
+            
+            // Останавливаем таймер при отправке формы
+            document.getElementById('test-form').addEventListener('submit', function() {
+                clearInterval(interval);
+                window.testSubmitted = true;
+                localStorage.removeItem('test_{{ test.id }}_answers');
+                localStorage.removeItem('test_{{ test.id }}_remaining_time');
+            });
+        }
+
+        // Инициализация таймера с учетом сохраненного времени
+        const timerDisplay = document.getElementById('timer-value');
+        if (timerDisplay) {
+            // Проверяем, есть ли сохраненное время
+            const savedTime = localStorage.getItem('test_{{ test.id }}_remaining_time');
+            let totalSeconds;
+            
+            if (savedTime !== null) {
+                totalSeconds = parseInt(savedTime, 10);
+            } else {
+                // Если нет сохраненного времени, используем время из параметров теста
+                const timerParts = timerDisplay.textContent.split(':');
+                const minutes = parseInt(timerParts[0], 10);
+                const seconds = timerParts.length > 1 ? parseInt(timerParts[1], 10) : 0;
+                totalSeconds = (minutes * 60) + seconds;
+            }
+            
+            startTimer(totalSeconds, timerDisplay);
+        }
+
+        // Проверка на неотвеченные вопросы
+        const checkUnansweredQuestions = function() {
+            const questionCards = document.querySelectorAll('.question-card');
+            let unansweredCount = 0;
+            
+            questionCards.forEach(card => {
+                let isAnswered = false;
+                
+                if (card.querySelector('input[type="radio"]')) {
+                    isAnswered = card.querySelector('input[type="radio"]:checked') !== null;
+                } else if (card.querySelector('input[type="checkbox"]')) {
+                    isAnswered = card.querySelector('input[type="checkbox"]:checked') !== null;
+                } else if (card.querySelector('textarea')) {
+                    isAnswered = card.querySelector('textarea').value.trim() !== '';
+                }
+                
+                if (!isAnswered) {
+                    unansweredCount++;
+                }
+            });
+            
+            const infoElement = document.getElementById('unanswered-questions-info');
+            if (unansweredCount > 0) {
+                infoElement.innerHTML = `<strong>У вас есть неотвеченные вопросы: ${unansweredCount} из ${questionCards.length}</strong>`;
+                infoElement.parentElement.classList.remove('alert-info');
+                infoElement.parentElement.classList.add('alert-warning');
+            } else {
+                infoElement.innerHTML = 'Вы ответили на все вопросы.';
+                infoElement.parentElement.classList.remove('alert-warning');
+                infoElement.parentElement.classList.add('alert-success');
+            }
+        };
+
+        // Функция принудительной отправки теста (резервный вариант)
+        function forceSubmitTest() {
+            if (!window.testSubmitted) {
+                console.log("Выполняется принудительная отправка формы при выходе...");
+                window.testSubmitted = true;
+                try {
+                    // Создаем резервный AJAX-запрос для отправки данных
+                    var formData = new FormData(document.getElementById('test-form'));
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", "/student/tests/submit/{{ test.id }}", false); // синхронный запрос
+                    xhr.send(formData);
+                    console.log("Резервная отправка формы выполнена:", xhr.status);
+                } catch (e) {
+                    console.error("Ошибка при принудительной отправке:", e);
+                }
+            }
+        }
+        
+        // Предотвращение случайного ухода со страницы
+        window.addEventListener('beforeunload', function(e) {
+            // Только если форма не была отправлена
+            if (!window.testSubmitted) {
+                saveUserAnswers(); // Сохраняем ответы перед уходом
+                // Пытаемся отправить форму
+                forceSubmitTest();
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+        
+        // Обработчик закрытия страницы для резервного сохранения
+        window.addEventListener('unload', function() {
+            forceSubmitTest();
+        });
+
+        // Показ модального окна завершения теста
+        document.getElementById('finishTestModal').addEventListener('show.bs.modal', function (event) {
+            checkUnansweredQuestions();
+        });
+
+        // Отправка формы и отображение результатов
+        document.getElementById('confirm-finish').addEventListener('click', function() {
+            console.log("Кнопка 'Завершить тест' нажата");
+            
+            // Подготовка к отправке формы
+            window.testSubmitted = true;
+            console.log("Флаг testSubmitted установлен в true");
+            
+            // Получение формы
+            var form = document.getElementById('test-form');
+            var formData = new FormData(form);
+            
+            // Подсчитываем результаты на клиенте
+            const questions = {{ test.questions|tojson|safe }};
+            let correctAnswers = 0;
+            let totalQuestions = questions.length;
+            let earnedPoints = 0;
+            let totalPoints = 0;
+            
+            // Проверяем ответы
+            questions.forEach(function(question, index) {
+                const questionId = question.id || String(index);
+                const formFieldName = `question_${questionId}`;
+                const studentAnswer = formData.get(formFieldName);
+                const questionPoints = question.points || 10;
+                totalPoints += questionPoints;
+                
+                let isCorrect = false;
+                
+                if (studentAnswer !== null) {
+                    if (typeof question.correct_answer !== 'undefined') {
+                        // Для вопросов с одним правильным ответом в виде числа
+                        isCorrect = parseInt(studentAnswer) === question.correct_answer;
+                    }
+                    else if (question.options && Array.isArray(question.options)) {
+                        // Для вариантов с объектами options
+                        const answerIndex = parseInt(studentAnswer);
+                        if (!isNaN(answerIndex) && question.options[answerIndex]) {
+                            // Проверяем, является ли выбранный вариант правильным
+                            if (question.options[answerIndex].is_correct) {
+                                isCorrect = true;
+                            }
+                        }
+                    }
+                }
+                
+                if (isCorrect) {
+                    correctAnswers++;
+                    earnedPoints += questionPoints;
+                }
+            });
+            
+            // Рассчитываем процент правильных ответов
+            const percent = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
+            
+            // Вычисляем оценку
+            let grade;
+            if (percent >= 90) {
+                grade = 5.0;
+            } else if (percent >= 75) {
+                grade = 4.0 + (percent - 75) / 15;
+            } else if (percent >= 60) {
+                grade = 3.0 + (percent - 60) / 15;
+            } else {
+                grade = 2.0;
+                if (percent > 0) {
+                    grade += (percent / 60);
+                }
+            }
+            
+            // Округляем оценку до десятых
+            grade = Math.round(grade * 10) / 10;
+            
+            // Отображаем результаты в модальном окне
+            document.getElementById('correct-answers-count').textContent = `${correctAnswers} / ${totalQuestions}`;
+            document.getElementById('total-questions-count').textContent = totalQuestions;
+            document.getElementById('earned-points').textContent = `${earnedPoints} / ${totalPoints}`;
+            document.getElementById('test-grade').textContent = grade;
+            
+            // Устанавливаем цвет бейджа с оценкой
+            const gradeElement = document.getElementById('test-grade');
+            if (grade >= 4.5) {
+                gradeElement.className = 'badge bg-success fs-6';
+            } else if (grade >= 3.5) {
+                gradeElement.className = 'badge bg-primary fs-6';
+            } else if (grade >= 2.5) {
+                gradeElement.className = 'badge bg-warning text-dark fs-6';
+            } else {
+                gradeElement.className = 'badge bg-danger fs-6';
+            }
+            
+            // Переключаем отображение на результаты
+            document.getElementById('test-confirmation').style.display = 'none';
+            document.getElementById('test-results').style.display = 'block';
+            document.getElementById('confirmation-buttons').style.display = 'none';
+            document.getElementById('results-buttons').style.display = 'block';
+            
+            // Очистка localStorage
+            localStorage.removeItem('test_{{ test.id }}_answers');
+            localStorage.removeItem('test_{{ test.id }}_remaining_time');
+            console.log("Данные теста удалены из localStorage");
+            
+            // Проверяем URL формы
+            if (!form.action.includes('/student/submit_test/')) {
+                // Если URL не содержит правильный путь, исправляем его
+                form.action = '/student/submit_test/{{ test.id }}';
+            }
+            
+            // Отправляем данные на сервер в фоновом режиме для сохранения
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log("Результаты теста успешно отправлены на сервер");
+            })
+            .catch(error => {
+                console.error("Ошибка при отправке результатов:", error);
+            });
+        });
+        
+        // Восстановление сохраненных ответов при загрузке страницы
+        restoreUserAnswers();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,592 @@
+{% extends "layout.html" %}
+
+{% block title %}Создание теста{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню -->
+    <div class="col-md-3 sidebar">
+        <h4 class="mb-3">Панель преподавателя</h4>
+        <div class="nav flex-column nav-pills">
+            <a class="nav-link" href="/teacher/dashboard">
+                <i class="bi bi-speedometer2 me-2"></i>Обзор
+            </a>
+            <a class="nav-link active" href="/teacher/tests">
+                <i class="bi bi-journal-text me-2"></i>Мои тесты
+            </a>
+            <a class="nav-link" href="/teacher/analytics">
+                <i class="bi bi-bar-chart me-2"></i>Аналитика
+            </a>
+            <a class="nav-link" href="/teacher/assign">
+                <i class="bi bi-person-check me-2"></i>Назначить тест
+            </a>
+        </div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="col-md-9">
+        <div class="page-title d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-plus-circle me-2"></i>Создание нового теста</h2>
+            <a href="/teacher/tests" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Назад к тестам
+            </a>
+        </div>
+        
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span>Заполните информацию о тесте, добавьте вопросы и варианты ответов. После сохранения тест будет доступен для назначения студентам.</span>
+        </div>
+        
+        <form id="create-test-form" action="/api/tests/create" method="post">
+            <!-- Основная информация о тесте -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Основная информация</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="test_title" class="form-label">Название теста</label>
+                            <input type="text" class="form-control" id="test_title" name="title" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="test_description" class="form-label">Описание теста</label>
+                            <textarea class="form-control" id="test_description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="test_time_limit" class="form-label">Ограничение времени (мин.)</label>
+                            <input type="number" class="form-control" id="test_time_limit" name="time_limit" value="30" min="5" max="180">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="test_passing_score" class="form-label">Проходной балл (%)</label>
+                            <input type="number" class="form-control" id="test_passing_score" name="passing_score" value="70" min="0" max="100">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="test_status" class="form-label">Статус теста</label>
+                            <select class="form-select" id="test_status" name="status">
+                                <option value="draft">Черновик</option>
+                                <option value="published">Опубликован</option>
+                                <option value="archived">Архив</option>
+                            </select>
+                        </div>
+                        <!-- Скрытое поле для данных вопросов -->
+                        <input type="hidden" id="questions_data" name="questions_data" value="[]">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Вопросы теста -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Вопросы теста</h5>
+                    <button type="button" class="btn btn-primary btn-sm" id="add-question-btn">
+                        <i class="bi bi-plus me-1"></i>Добавить вопрос
+                    </button>
+                </div>
+                <div class="card-body" id="questions-container">
+                    <div class="alert alert-secondary" id="no-questions-alert">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        <span>Вопросы еще не добавлены. Нажмите кнопку "Добавить вопрос".</span>
+                    </div>
+                    
+                    <!-- Вопросы будут добавляться сюда -->
+                </div>
+            </div>
+            
+            <!-- Кнопки действий -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="location.href='/teacher/tests'">
+                            <i class="bi bi-x-circle me-2"></i>Отмена
+                        </button>
+                        <div>
+                            <button type="button" id="preview-test-btn" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-eye me-2"></i>Предпросмотр
+                            </button>
+                            <button type="button" id="save-test-btn" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Создать тест
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Шаблон вопроса (скрыт и используется как основа для новых вопросов) -->
+<template id="question-template">
+    <div class="question-item card mb-3">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Вопрос <span class="question-number"></span></h6>
+            <div>
+                <button type="button" class="btn btn-outline-danger btn-sm delete-question-btn">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <label class="form-label">Текст вопроса</label>
+                    <textarea class="form-control question-text" rows="2" required></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Тип вопроса</label>
+                    <select class="form-select question-type">
+                        <option value="single">Один вариант ответа</option>
+                        <option value="multiple">Несколько вариантов ответа</option>
+                        <option value="text">Текстовый ответ</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Баллы за вопрос</label>
+                    <input type="number" class="form-control question-points" value="1" min="1" max="100">
+                </div>
+            </div>
+            
+            <div class="options-container mt-3">
+                <h6 class="border-bottom pb-2 mb-3 d-flex justify-content-between align-items-center">
+                    <span>Варианты ответов</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-option-btn">
+                        <i class="bi bi-plus-circle me-1"></i>Добавить вариант
+                    </button>
+                </h6>
+                
+                <div class="options-list">
+                    <!-- Варианты ответов будут добавляться сюда -->
+                </div>
+            </div>
+            
+            <div class="text-answer-container mt-3 d-none">
+                <h6 class="border-bottom pb-2 mb-3">Правильный ответ</h6>
+                <div class="row g-2">
+                    <div class="col-md-12">
+                        <input type="text" class="form-control correct-answer" placeholder="Введите правильный ответ">
+                        <div class="form-text">Укажите точный ответ, который должен ввести студент. Регистр не учитывается.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Шаблон варианта ответа (скрыт и используется как основа для новых вариантов) -->
+<template id="option-template">
+    <div class="option-item row g-2 mb-2">
+        <div class="col-md-8">
+            <input type="text" class="form-control option-text" placeholder="Вариант ответа" required>
+        </div>
+        <div class="col-md-3">
+            <div class="form-check mt-2">
+                <input class="form-check-input correct-option" type="checkbox" value="1">
+                <label class="form-check-label">Правильный ответ</label>
+            </div>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-outline-danger btn-sm delete-option-btn">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    </div>
+</template>
+
+<!-- Модальное окно предпросмотра -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Предпросмотр теста</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="preview-content">
+                <!-- Здесь будет содержимое предпросмотра -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Глобальные переменные
+        let questionCounter = 0;
+        const questionTemplate = document.getElementById('question-template');
+        const optionTemplate = document.getElementById('option-template');
+        const questionsContainer = document.getElementById('questions-container');
+        const noQuestionsAlert = document.getElementById('no-questions-alert');
+        
+        // Объект для модального окна предпросмотра
+        const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+        
+        // Функция добавления нового вопроса
+        function addQuestion() {
+            // Клонируем шаблон вопроса
+            const questionNode = document.importNode(questionTemplate.content, true).firstElementChild;
+            questionCounter++;
+            
+            // Устанавливаем номер вопроса
+            questionNode.querySelector('.question-number').textContent = questionCounter;
+            
+            // Добавляем обработчики событий
+            setupQuestionEvents(questionNode, questionCounter);
+            
+            // Добавляем начальный вариант ответа для вопросов с вариантами
+            addOption(questionNode);
+            
+            // Добавляем вопрос в контейнер
+            questionsContainer.appendChild(questionNode);
+            
+            // Скрываем сообщение о том, что нет вопросов
+            noQuestionsAlert.classList.add('d-none');
+            
+            return questionNode;
+        }
+        
+        // Функция добавления нового варианта ответа
+        function addOption(questionNode, isCorrect = false) {
+            const optionsContainer = questionNode.querySelector('.options-list');
+            const optionNode = document.importNode(optionTemplate.content, true).firstElementChild;
+            
+            // Настраиваем правильность ответа
+            optionNode.querySelector('.correct-option').checked = isCorrect;
+            
+            // Устанавливаем правильный тип для инпута (radio/checkbox)
+            const questionType = questionNode.querySelector('.question-type').value;
+            if (questionType === 'single') {
+                const correctOption = optionNode.querySelector('.correct-option');
+                correctOption.type = 'radio';
+                correctOption.name = `correct_option_${questionCounter}`;
+            }
+            
+            // Добавляем обработчик удаления
+            optionNode.querySelector('.delete-option-btn').addEventListener('click', function() {
+                if (optionsContainer.children.length > 1) {
+                    optionNode.remove();
+                } else {
+                    alert('Должен быть хотя бы один вариант ответа');
+                }
+            });
+            
+            // Добавляем вариант в список
+            optionsContainer.appendChild(optionNode);
+            
+            return optionNode;
+        }
+        
+        // Функция настройки обработчиков событий для вопроса
+        function setupQuestionEvents(questionNode, questionIndex) {
+            // Обработчик удаления вопроса
+            questionNode.querySelector('.delete-question-btn').addEventListener('click', function() {
+                if (confirm('Вы уверены, что хотите удалить этот вопрос?')) {
+                    questionNode.remove();
+                    updateQuestionNumbers();
+                }
+            });
+            
+            // Обработчик изменения типа вопроса
+            questionNode.querySelector('.question-type').addEventListener('change', function() {
+                const optionsContainer = questionNode.querySelector('.options-container');
+                const textAnswerContainer = questionNode.querySelector('.text-answer-container');
+                
+                if (this.value === 'text') {
+                    optionsContainer.classList.add('d-none');
+                    textAnswerContainer.classList.remove('d-none');
+                } else {
+                    optionsContainer.classList.remove('d-none');
+                    textAnswerContainer.classList.add('d-none');
+                    
+                    // Если нет вариантов ответа, добавляем один
+                    const optionsList = questionNode.querySelector('.options-list');
+                    if (optionsList.children.length === 0) {
+                        addOption(questionNode);
+                    }
+                    
+                    // Обновляем тип вариантов ответа (radio или checkbox)
+                    const isMultiple = this.value === 'multiple';
+                    const options = questionNode.querySelectorAll('.correct-option');
+                    options.forEach(option => {
+                        option.type = isMultiple ? 'checkbox' : 'radio';
+                        if (!isMultiple) {
+                            option.name = `correct_option_${questionIndex}`;
+                        } else {
+                            option.name = `correct_option_${questionIndex}[]`;
+                        }
+                    });
+                }
+            });
+            
+            // Обработчик добавления варианта ответа
+            questionNode.querySelector('.add-option-btn').addEventListener('click', function() {
+                addOption(questionNode);
+            });
+        }
+        
+        // Функция обновления нумерации вопросов
+        function updateQuestionNumbers() {
+            const questions = document.querySelectorAll('.question-item');
+            
+            if (questions.length === 0) {
+                noQuestionsAlert.classList.remove('d-none');
+                questionCounter = 0;
+            } else {
+                questions.forEach((question, index) => {
+                    question.querySelector('.question-number').textContent = index + 1;
+                });
+            }
+        }
+        
+        // Функция сбора данных формы
+        function collectFormData() {
+            const testData = {
+                title: document.getElementById('test_title').value.trim(),
+                description: document.getElementById('test_description').value.trim(),
+                time_limit: parseInt(document.getElementById('test_time_limit').value) || 30,
+                passing_score: parseInt(document.getElementById('test_passing_score').value) || 70,
+                status: document.getElementById('test_status').value,
+                questions: []
+            };
+            
+            // Собираем данные вопросов
+            document.querySelectorAll('.question-item').forEach((questionNode, index) => {
+                const question = {
+                    id: `q${index + 1}`,
+                    text: questionNode.querySelector('.question-text').value.trim(),
+                    type: questionNode.querySelector('.question-type').value,
+                    points: parseInt(questionNode.querySelector('.question-points').value) || 1
+                };
+                
+                if (question.type === 'text') {
+                    // Для текстовых вопросов
+                    question.correct_answer = questionNode.querySelector('.correct-answer').value.trim();
+                } else {
+                    // Для вопросов с вариантами
+                    question.options = [];
+                    questionNode.querySelectorAll('.option-item').forEach(optionNode => {
+                        question.options.push({
+                            text: optionNode.querySelector('.option-text').value.trim(),
+                            is_correct: optionNode.querySelector('.correct-option').checked
+                        });
+                    });
+                }
+                
+                testData.questions.push(question);
+            });
+            
+            return testData;
+        }
+        
+        // Функция валидации формы
+        function validateForm() {
+            const testTitle = document.getElementById('test_title').value.trim();
+            if (!testTitle) {
+                alert('Введите название теста');
+                document.getElementById('test_title').focus();
+                return false;
+            }
+            
+            const questions = document.querySelectorAll('.question-item');
+            if (questions.length === 0) {
+                alert('Добавьте хотя бы один вопрос');
+                return false;
+            }
+            
+            let isValid = true;
+            
+            questions.forEach((questionNode, index) => {
+                const questionText = questionNode.querySelector('.question-text').value.trim();
+                const questionType = questionNode.querySelector('.question-type').value;
+                
+                if (!questionText) {
+                    alert(`Вопрос ${index + 1}: введите текст вопроса`);
+                    isValid = false;
+                    return;
+                }
+                
+                if (questionType === 'text') {
+                    // Проверка для текстовых вопросов
+                    const correctAnswer = questionNode.querySelector('.correct-answer').value.trim();
+                    if (!correctAnswer) {
+                        alert(`Вопрос ${index + 1}: введите правильный ответ`);
+                        isValid = false;
+                        return;
+                    }
+                } else {
+                    // Проверка для вопросов с вариантами
+                    const options = questionNode.querySelectorAll('.option-item');
+                    if (options.length < 2) {
+                        alert(`Вопрос ${index + 1}: добавьте не менее двух вариантов ответа`);
+                        isValid = false;
+                        return;
+                    }
+                    
+                    // Проверка наличия правильного ответа
+                    let hasCorrectOption = false;
+                    options.forEach(optionNode => {
+                        if (optionNode.querySelector('.correct-option').checked) {
+                            hasCorrectOption = true;
+                        }
+                        
+                        // Проверка текста варианта
+                        const optionText = optionNode.querySelector('.option-text').value.trim();
+                        if (!optionText) {
+                            alert(`Вопрос ${index + 1}: заполните текст всех вариантов ответа`);
+                            isValid = false;
+                            return;
+                        }
+                    });
+                    
+                    if (!hasCorrectOption) {
+                        alert(`Вопрос ${index + 1}: отметьте хотя бы один правильный ответ`);
+                        isValid = false;
+                        return;
+                    }
+                }
+            });
+            
+            return isValid;
+        }
+        
+        // Функция генерации HTML для предпросмотра
+        function generatePreviewHTML(testData) {
+            let html = `
+                <div class="preview-test">
+                    <h4>${escapeHTML(testData.title)}</h4>
+                    <p class="text-muted">${escapeHTML(testData.description || 'Без описания')}</p>
+                    <p><strong>Время на выполнение:</strong> ${testData.time_limit} минут</p>
+                    <p><strong>Проходной балл:</strong> ${testData.passing_score}%</p>
+                    <hr>
+                    <h5>Вопросы теста:</h5>
+                    <div class="preview-questions">
+            `;
+            
+            testData.questions.forEach((question, index) => {
+                html += `
+                    <div class="preview-question mb-4">
+                        <h6>${index + 1}. ${escapeHTML(question.text)} <span class="badge bg-secondary">${question.points} ${getPointsLabel(question.points)}</span></h6>
+                `;
+                
+                if (question.type === 'single') {
+                    html += `<p class="text-muted">Выберите один вариант ответа:</p><div class="preview-options">`;
+                    question.options.forEach((option) => {
+                        html += `
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" disabled>
+                                <label class="form-check-label${option.is_correct ? ' text-success fw-bold' : ''}">
+                                    ${escapeHTML(option.text)} ${option.is_correct ? ' (Правильный ответ)' : ''}
+                                </label>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                } else if (question.type === 'multiple') {
+                    html += `<p class="text-muted">Выберите все правильные варианты:</p><div class="preview-options">`;
+                    question.options.forEach((option) => {
+                        html += `
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" disabled>
+                                <label class="form-check-label${option.is_correct ? ' text-success fw-bold' : ''}">
+                                    ${escapeHTML(option.text)} ${option.is_correct ? ' (Правильный ответ)' : ''}
+                                </label>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                } else if (question.type === 'text') {
+                    html += `
+                        <p class="text-muted">Введите ответ:</p>
+                        <input type="text" class="form-control" disabled>
+                        <p class="text-success mt-2"><small>Правильный ответ: ${escapeHTML(question.correct_answer)}</small></p>
+                    `;
+                }
+                
+                html += `</div>`;
+            });
+            
+            html += `</div></div>`;
+            
+            return html;
+        }
+        
+        // Вспомогательная функция для экранирования HTML
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        
+        // Вспомогательная функция для склонения слова "балл"
+        function getPointsLabel(points) {
+            if (points % 10 === 1 && points % 100 !== 11) {
+                return 'балл';
+            } else if ([2, 3, 4].includes(points % 10) && ![12, 13, 14].includes(points % 100)) {
+                return 'балла';
+            } else {
+                return 'баллов';
+            }
+        }
+        
+        // Обработчик кнопки "Добавить вопрос"
+        document.getElementById('add-question-btn').addEventListener('click', function() {
+            addQuestion();
+        });
+        
+        // Обработчик кнопки "Предпросмотр"
+        document.getElementById('preview-test-btn').addEventListener('click', function() {
+            if (!validateForm()) {
+                return;
+            }
+            
+            const testData = collectFormData();
+            document.getElementById('preview-content').innerHTML = generatePreviewHTML(testData);
+            previewModal.show();
+        });
+        
+        // Обработчик кнопки "Создать тест"
+        document.getElementById('save-test-btn').addEventListener('click', function() {
+            if (!validateForm()) {
+                return;
+            }
+            
+            const testData = collectFormData();
+            
+            // Выводим данные в консоль для отладки
+            console.log('Отправка данных теста:', testData);
+            
+            // Отправляем данные на сервер
+            fetch('/api/tests/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(testData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Ошибка при создании теста');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Тест успешно создан:', data);
+                alert('Тест успешно создан!');
+                window.location.href = '/teacher/tests';
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка: ' + error.message);
+            });
+        });
+        
+        // Добавляем первый вопрос по умолчанию
+        addQuestion();
+    });
+</script>
+{% endblock %}

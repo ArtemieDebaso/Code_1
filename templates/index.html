@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}Система тестирования - Главная{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1 class="display-5 fw-bold mb-4">Система тестирования</h1>
+    <p class="lead mb-4">
+        Добро пожаловать в демонстрационное приложение системы тестирования с ролевым доступом и усиленной безопасностью.
+    </p>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="feature-icon">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+            <h3>Безопасность</h3>
+            <p>Хеширование SHA-256 с солью и защита от брут-форс атак</p>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-icon">
+                <i class="bi bi-mortarboard"></i>
+            </div>
+            <h3>Тестирование</h3>
+            <p>Создание и прохождение тестов с автоматической проверкой</p>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Роли</h3>
+            <p>Разграничение доступа для администраторов, преподавателей и студентов</p>
+        </div>
+    </div>
+    
+    <div class="d-grid gap-2 d-sm-flex justify-content-center mb-4">
+        <a href="/login" class="btn btn-primary btn-lg px-5 gap-2">Войти в систему</a>
+    </div>
+    
+    <div class="alert alert-info">
+        <p class="mb-0">
+            <strong>Тестовые пользователи:</strong>
+        </p>
+        <ul class="list-unstyled mt-2">
+            <li>Администратор: admin / Password123</li>
+            <li>Студент: student / Student123</li>
+            <li>Преподаватель: teacher / Teacher123</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

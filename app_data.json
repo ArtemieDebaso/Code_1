@@ -1,0 +1,479 @@
+{
+  "users_db": {
+    "admin": {
+      "salt": "Wg1pf9SfoBtLfpvw0COj0A==",
+      "password_hash": "LgdGR2G+G1y8hoYI+15slQCUGRqZm3ih5uf8Ia85Guo=",
+      "password": "Password123",
+      "role": "admin",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Администратор",
+      "last_name": "Системный",
+      "middle_name": "",
+      "name": "Администратор Системный",
+      "email": "admin@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student": {
+      "salt": "lxyHmhKj7LnozrknPq2xuw==",
+      "password_hash": "ax48mbrwFtWzvWee+od4hmFZBbbf0+szJE4RIfoyt2s=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Иван",
+      "last_name": "Студентов",
+      "middle_name": "Петрович",
+      "name": "Иван Студентов",
+      "email": "student@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "teacher": {
+      "salt": "XhrUtm93bC0elen1g9jKpw==",
+      "password_hash": "Q1CQwK//shVKu9NH9YZS4xB/ZStB23qsA9BSuTYhoGI=",
+      "password": "Teacher123",
+      "role": "teacher",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Елена",
+      "last_name": "Преподавателева",
+      "middle_name": "Сергеевна",
+      "name": "Елена Преподавателева",
+      "email": "teacher@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_b1": {
+      "salt": "HZhwAoN7khXSRvyZ9GEN1w==",
+      "password_hash": "gRs3c9hnVEYI2GADjPwO8cxWJuF8NIWOeLsxd3dpAlE=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Алексей",
+      "last_name": "Смирнов",
+      "middle_name": "Иванович",
+      "name": "Алексей Смирнов",
+      "email": "student_b1@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_b2": {
+      "salt": "27uEtrL26e745rstgOe99Q==",
+      "password_hash": "UD81ghVc/YuMF5go6mvNhfNg1/RhG08VG3/nq2hlj6U=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Мария",
+      "last_name": "Иванова",
+      "middle_name": "Петровна",
+      "name": "Мария Иванова",
+      "email": "student_b2@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_b3": {
+      "salt": "9fJ38V/vd/2vVe2GhjqlzQ==",
+      "password_hash": "QxrfUWMat4HNPsdQGCiUomTPtycrfhk+Ec13QpHky1s=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Дмитрий",
+      "last_name": "Козлов",
+      "middle_name": "Андреевич",
+      "name": "Дмитрий Козлов",
+      "email": "student_b3@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_b4": {
+      "salt": "gHfaZyiNGst9VIJSYsAOHw==",
+      "password_hash": "bqrUWSNzwFBkJVmMnz0ylAvwqi+94X/IWokLm7j8HQY=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Анна",
+      "last_name": "Соколова",
+      "middle_name": "Александровна",
+      "name": "Анна Соколова",
+      "email": "student_b4@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_b5": {
+      "salt": "BMd3V1SoyjMZSMTvC7+N9A==",
+      "password_hash": "cCmzkKDT48jL5kMU9nnyPHbC62L0xGK7GOA+23YXMyU=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Павел",
+      "last_name": "Морозов",
+      "middle_name": "Сергеевич",
+      "name": "Павел Морозов",
+      "email": "student_b5@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_c1": {
+      "salt": "DfkKIX5r9L9zsZLV/dWIuQ==",
+      "password_hash": "/TrIf4WpVitnVBu0jq7G7BtUDoImTAqpjfbUp1aN+6M=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Екатерина",
+      "last_name": "Волкова",
+      "middle_name": "Дмитриевна",
+      "name": "Екатерина Волкова",
+      "email": "student_c1@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_c2": {
+      "salt": "VtpCTTr+ELovxBqDywIoNA==",
+      "password_hash": "XHtxyqYhoOMqd6gpcPP2yaX/egxqg3Lu+N7zX4RsAk0=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Николай",
+      "last_name": "Петров",
+      "middle_name": "Владимирович",
+      "name": "Николай Петров",
+      "email": "student_c2@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_c3": {
+      "salt": "/JJxTQdu/Ijol/38o0iwcg==",
+      "password_hash": "2DODF74bqS6SnQvRFsJsLM1Hk3C42y+zyWTyhBPD1DU=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Ольга",
+      "last_name": "Васильева",
+      "middle_name": "Викторовна",
+      "name": "Ольга Васильева",
+      "email": "student_c3@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_c4": {
+      "salt": "+haSQg3sy28C8+2Y9KPkkg==",
+      "password_hash": "mbJbU8fVzfO1vquHX639Ap2SXayMPOf1QNuv72zo8xo=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Сергей",
+      "last_name": "Попов",
+      "middle_name": "Алексеевич",
+      "name": "Сергей Попов",
+      "email": "student_c4@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_c5": {
+      "salt": "ADLbveaLVXHSx2iU26T3FQ==",
+      "password_hash": "ekaKGV/rxS219FMO8iGPc8i2AYQXh1KCukvz7yngnwI=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Юлия",
+      "last_name": "Андреева",
+      "middle_name": "Михайловна",
+      "name": "Юлия Андреева",
+      "email": "student_c5@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_c6": {
+      "salt": "We2F1E1RB0gB0fkli5o32A==",
+      "password_hash": "ZA1qe2D4ljg4AgM79yU6EejzSh5HWqrKi/w6W93czHk=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Максим",
+      "last_name": "Лебедев",
+      "middle_name": "Артемович",
+      "name": "Максим Лебедев",
+      "email": "student_c6@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_d1": {
+      "salt": "OvywW0Y+/PzKyixM+IXG0Q==",
+      "password_hash": "/xlVn1HS96x56+I7+dH3wStxnpzEB0TKjHX6u7Q6qJ0=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Владислав",
+      "last_name": "Новиков",
+      "middle_name": "Алексеевич",
+      "name": "Владислав Новиков",
+      "email": "student_d1@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_d2": {
+      "salt": "+alt9uRnnK09vMtIq/NgJQ==",
+      "password_hash": "gr8rC7CbhM0BKrn2Wb0AyJCc2+OuY7nWgvjuPSqnyi4=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Татьяна",
+      "last_name": "Макарова",
+      "middle_name": "Игоревна",
+      "name": "Татьяна Макарова",
+      "email": "student_d2@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_d3": {
+      "salt": "NundGkLsPQnILQ9oyJlz7Q==",
+      "password_hash": "vH73devZAdw1tz14ktK1qAylTWO+k8Akvrsy4DvkXhY=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Александр",
+      "last_name": "Козлов",
+      "middle_name": "Сергеевич",
+      "name": "Александр Козлов",
+      "email": "student_d3@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_d4": {
+      "salt": "YshM95XR6wwftF7LxBnCoQ==",
+      "password_hash": "+UCCEPNiDuEZlns9cs7RSa/Ygxcoh67EC9NtQcztH3c=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Наталья",
+      "last_name": "Соловьева",
+      "middle_name": "Андреевна",
+      "name": "Наталья Соловьева",
+      "email": "student_d4@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_d5": {
+      "salt": "B3NlEmrQ6xHcG1DL87R12A==",
+      "password_hash": "IjMjdxD9SDW9sAEKlU2MHoAmfKS4UwAsBWVsCQpMtqg=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Андрей",
+      "last_name": "Семенов",
+      "middle_name": "Павлович",
+      "name": "Андрей Семенов",
+      "email": "student_d5@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    },
+    "student_d6": {
+      "salt": "vJ6HbZVc3OKMHZS5tnO4+A==",
+      "password_hash": "Q79EAIXdmkF6BLWeHLAkgCEc6c1JZ00TM/4BkccflFM=",
+      "password": "Student123",
+      "role": "student",
+      "failed_attempts": 0,
+      "lockout_until": null,
+      "first_name": "Елизавета",
+      "last_name": "Киреева",
+      "middle_name": "Викторовна",
+      "name": "Елизавета Киреева",
+      "email": "student_d6@example.com",
+      "created_at": "2025-05-22 22:20:07",
+      "last_login": null
+    }
+  },
+  "tests_db": {
+    "test1": {
+      "title": "Основы программирования",
+      "description": "Тест на знание основ программирования",
+      "category": "Программирование",
+      "time_limit": 30,
+      "visibility": "published",
+      "created_by": "teacher",
+      "created_at": "2025-05-22 22:20:07",
+      "questions": [
+        {
+          "question": "Что такое переменная?",
+          "options": [
+            "Контейнер для хранения данных",
+            "Математическая формула",
+            "Тип данных",
+            "Функция в программировании"
+          ],
+          "correct_answer": 0
+        },
+        {
+          "question": "Какой язык программирования мы изучаем?",
+          "options": [
+            "Java",
+            "Python",
+            "C++",
+            "JavaScript"
+          ],
+          "correct_answer": 1
+        }
+      ],
+      "assigned_to": {
+        "groups": [
+          "group1"
+        ],
+        "students": []
+      },
+      "results": {}
+    },
+    "test2": {
+      "title": "Базы данных SQL",
+      "description": "Тест на знание основ SQL и реляционных баз данных",
+      "category": "Базы данных",
+      "time_limit": 45,
+      "visibility": "published",
+      "created_by": "teacher",
+      "created_at": "2025-05-22 22:20:07",
+      "questions": [
+        {
+          "question": "Что такое SQL?",
+          "options": [
+            "Язык структурированных запросов",
+            "Система управления базами данных",
+            "Фреймворк для веб-разработки",
+            "Протокол передачи данных"
+          ],
+          "correct_answer": 0
+        },
+        {
+          "question": "Какая команда используется для выборки данных из таблицы?",
+          "options": [
+            "INSERT",
+            "UPDATE",
+            "SELECT",
+            "DELETE"
+          ],
+          "correct_answer": 2
+        },
+        {
+          "question": "Что такое первичный ключ?",
+          "options": [
+            "Поле, которое однозначно идентифицирует запись в таблице",
+            "Пароль для доступа к базе данных",
+            "Первая колонка в таблице",
+            "Ссылка на другую таблицу"
+          ],
+          "correct_answer": 0
+        }
+      ],
+      "assigned_to": {
+        "groups": [
+          "group2",
+          "group3"
+        ],
+        "students": []
+      },
+      "results": {}
+    },
+    "test3": {
+      "title": "Основы безопасности",
+      "description": "Тест на знание основ информационной безопасности",
+      "category": "Безопасность",
+      "time_limit": 40,
+      "visibility": "published",
+      "created_by": "teacher",
+      "created_at": "2025-05-22 22:20:07",
+      "questions": [
+        {
+          "question": "Что такое хеширование паролей?",
+          "options": [
+            "Способ шифрования паролей для защиты от взлома",
+            "Метод сжатия данных",
+            "Процесс разделения пароля на части",
+            "Техника для ускорения доступа к паролям"
+          ],
+          "correct_answer": 0
+        },
+        {
+          "question": "Какая из перечисленных практик является наиболее безопасной?",
+          "options": [
+            "Хранение паролей в открытом виде",
+            "Хранение хеша пароля с солью",
+            "Шифрование пароля симметричным ключом",
+            "Сохранение пароля в cookie браузера"
+          ],
+          "correct_answer": 1
+        }
+      ],
+      "assigned_to": {
+        "groups": [
+          "group1",
+          "group2",
+          "group3",
+          "group4"
+        ],
+        "students": []
+      },
+      "results": {}
+    }
+  },
+  "groups_db": {
+    "group1": {
+      "name": "Группа A-101",
+      "students": [
+        "student"
+      ],
+      "description": "Группа студентов первого курса"
+    },
+    "group2": {
+      "name": "Группа B-201",
+      "students": [
+        "student_b1",
+        "student_b2",
+        "student_b3",
+        "student_b4",
+        "student_b5"
+      ],
+      "description": "Группа студентов второго курса"
+    },
+    "group3": {
+      "name": "Группа C-301",
+      "students": [
+        "student_c1",
+        "student_c2",
+        "student_c3",
+        "student_c4",
+        "student_c5",
+        "student_c6"
+      ],
+      "description": "Группа студентов третьего курса"
+    },
+    "group4": {
+      "name": "Группа D-401",
+      "students": [
+        "student_d1",
+        "student_d2",
+        "student_d3",
+        "student_d4",
+        "student_d5",
+        "student_d6"
+      ],
+      "description": "Группа студентов четвертого курса"
+    }
+  },
+  "test_results_db": {}
+}

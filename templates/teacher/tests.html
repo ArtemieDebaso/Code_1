@@ -1,0 +1,846 @@
+{% extends "layout.html" %}
+
+{% block title %}Мои тесты{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Стили для индикатора сохранения */
+    .save-indicator {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: #ff3b30;
+        color: white;
+        text-align: center;
+        padding: 20px;
+        font-weight: bold;
+        z-index: 9999;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        font-size: 20px;
+        animation: blink 0.6s infinite alternate;
+    }
+    
+    @keyframes blink {
+        from { opacity: 1; background-color: #ff3b30; }
+        to { opacity: 0.7; background-color: #d70000; }
+    }
+    
+    .indicator-dot {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        background-color: red;
+        border-radius: 50%;
+        margin-right: 8px;
+        position: relative;
+        top: -1px;
+        animation: pulse 0.8s infinite alternate;
+    }
+    
+    @keyframes pulse {
+        from { transform: scale(1); box-shadow: 0 0 0 rgba(255, 0, 0, 0.7); }
+        to { transform: scale(1.2); box-shadow: 0 0 10px rgba(255, 0, 0, 0.9); }
+    }
+    
+    .saving-active {
+        background-color: #0056b3 !important;
+        border-color: #003d80 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню -->
+    <div class="col-md-3 sidebar">
+        <h4 class="mb-3">Панель преподавателя</h4>
+        <div class="nav flex-column nav-pills">
+            <a class="nav-link" href="/teacher/dashboard">
+                <i class="bi bi-speedometer2 me-2"></i>Обзор
+            </a>
+            <a class="nav-link active" href="/teacher/tests">
+                <i class="bi bi-journal-text me-2"></i>Мои тесты
+            </a>
+            <a class="nav-link" href="/teacher/analytics">
+                <i class="bi bi-graph-up me-2"></i>Аналитика
+            </a>
+            <a class="nav-link" href="/teacher/assign">
+                <i class="bi bi-people me-2"></i>Назначить тест
+            </a>
+        </div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="col-md-9">
+        <div class="page-title d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-journal-text me-2"></i>Мои тесты</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTestModal">
+                <i class="bi bi-plus-circle me-2"></i>Создать тест
+            </button>
+        </div>
+        
+        <!-- Фильтры поиска -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Поиск и фильтрация</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Поиск по названию...">
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select">
+                            <option selected>Все категории</option>
+                            <option>Программирование</option>
+                            <option>Математика</option>
+                            <option>Физика</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select">
+                            <option selected>Сортировка: новые</option>
+                            <option>Сортировка: старые</option>
+                            <option>По алфавиту</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Список тестов -->
+        {% if tests %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Список тестов</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Название</th>
+                                <th scope="col">Описание</th>
+                                <th scope="col">Вопросов</th>
+                                <th scope="col">Создан</th>
+                                <th scope="col">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for test in tests %}
+                            <tr>
+                                <td>{{ test.title }}</td>
+                                <td class="text-truncate" style="max-width: 200px;">{{ test.description }}</td>
+                                <td>{{ test.questions_count }}</td>
+                                <td>{{ test.created_at }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/teacher/tests/edit/{{ test.id }}" class="btn btn-outline-primary" title="Редактировать">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewTestModal{{ test.id }}" title="Просмотр теста">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <a href="/teacher/assign" class="btn btn-outline-success" title="Назначить">
+                                            <i class="bi bi-people"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger delete-test-btn" title="Удалить" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteTestModal" 
+                                                data-test-id="{{ test.id }}" data-test-title="{{ test.title }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center pagination-sm mb-0">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% else %}
+        <!-- Если нет тестов -->
+        <div class="card mb-4">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-journal-x text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">У вас пока нет созданных тестов</h4>
+                <p class="text-muted">Начните создавать ваши первые тесты для студентов</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTestModal">
+                    <i class="bi bi-plus-circle me-2"></i>Создать первый тест
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Модальные окна просмотра тестов -->
+{% for test in tests %}
+<div class="modal fade" id="viewTestModal{{ test.id }}" tabindex="-1" aria-labelledby="viewTestModalLabel{{ test.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewTestModalLabel{{ test.id }}">{{ test.title }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <h6 class="fw-bold">Описание:</h6>
+                    <p>{{ test.description }}</p>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0">Вопросы ({{ test.questions|length }}):</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary toggle-all-questions" data-accordion-id="accordionTest{{ test.id }}">
+                        <i class="bi bi-chevron-down me-1"></i>Раскрыть все ответы
+                    </button>
+                </div>
+                <div class="accordion" id="accordionTest{{ test.id }}">
+                    {% for question in test.questions %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ test.id }}Q{{ loop.index }}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ test.id }}Q{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ test.id }}Q{{ loop.index }}">
+                                Вопрос {{ loop.index }}: {{ question.question }}
+                            </button>
+                        </h2>
+                        <div id="collapse{{ test.id }}Q{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ test.id }}Q{{ loop.index }}" data-bs-parent="#accordionTest{{ test.id }}">
+                            <div class="accordion-body">
+                                <h6>Варианты ответов:</h6>
+                                <ol class="list-group list-group-numbered mb-3">
+                                    {% if question.type == 'text' %}
+                                        <li class="list-group-item list-group-item-success">
+                                            {{ question.correct_answer }}
+                                            <span class="badge bg-success ms-2">Правильный ответ</span>
+                                        </li>
+                                    {% else %}
+                                        {% for option in question.options %}
+                                        <li class="list-group-item {% if loop.index0 == question.correct_answer or (question.correct_answers and loop.index0 in question.correct_answers) or (option.is_correct) %}list-group-item-success{% endif %}">
+                                            {% if option is string %}
+                                                {{ option }}
+                                            {% else %}
+                                                {{ option.text }}
+                                            {% endif %}
+                                            {% if loop.index0 == question.correct_answer or (question.correct_answers and loop.index0 in question.correct_answers) or (option.is_correct) %}
+                                            <span class="badge bg-success ms-2">Правильный ответ</span>
+                                            {% endif %}
+                                        </li>
+                                        {% endfor %}
+                                    {% endif %}
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <a href="/teacher/tests/edit/{{ test.id }}" class="btn btn-primary">Редактировать</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Модальное окно удаления теста -->
+<div class="modal fade" id="deleteTestModal" tabindex="-1" aria-labelledby="deleteTestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTestModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить тест "<span id="deleteTestTitle"></span>"?</p>
+                <p class="text-danger"><strong>Внимание:</strong> Это действие нельзя отменить. Все результаты тестирования также будут удалены.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteTestForm" action="/teacher/tests/delete/" method="post">
+                    <input type="hidden" id="deleteTestId" name="test_id" value="">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания теста -->
+<div class="modal fade" id="createTestModal" tabindex="-1" aria-labelledby="createTestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createTestModalLabel">Создание нового теста</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createTestForm" action="/teacher/tests/create" method="post">
+                <div class="modal-body">
+                    <!-- Скрытое поле для JSON данных с вопросами -->
+                    <input type="hidden" name="questions_data" id="questionsData" value="[]">
+                    
+                    <!-- Основная информация -->
+                    <div class="step-container" id="testInfoStep">
+
+                        <div class="mb-3">
+                            <label for="testTitle" class="form-label">Название теста <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="testTitle" name="title" placeholder="Введите название теста" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="testDescription" class="form-label">Описание теста</label>
+                            <textarea class="form-control" id="testDescription" name="description" rows="3" placeholder="Введите описание теста"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <!-- Категория удалена, все тесты относятся к одной дисциплине -->
+                                <input type="hidden" id="testCategory" name="category" value="all">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="testTime" class="form-label">Время на выполнение (мин)</label>
+                                <input type="number" class="form-control" id="testTime" name="time_limit" value="45" min="5" max="180">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Видимость теста</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="visibility" id="testVisibilityDraft" value="draft" checked>
+                                <label class="form-check-label" for="testVisibilityDraft">
+                                    Черновик (видите только вы)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="visibility" id="testVisibilityPublic" value="public">
+                                <label class="form-check-label" for="testVisibilityPublic">
+                                    Опубликовать (доступен сразу для назначения)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-primary" id="goToQuestionsBtn">Продолжить</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Создание вопросов -->
+                    <div class="step-container" id="questionsStep" style="display: none;">
+                        <h6 class="border-bottom pb-2 mb-3">Создание вопросов</h6>
+                        
+                        <!-- Список существующих вопросов -->
+                        <div id="questionsList" class="mb-3" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                            <div class="alert alert-info" id="noQuestionsAlert">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                Вы еще не добавили ни одного вопроса. Используйте кнопку "Добавить вопрос" ниже.
+                            </div>
+                            <div id="questionsContainer"></div>
+                        </div>
+                        
+                        <!-- Кнопка для добавления вопроса -->
+                        <div class="mb-4">
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" id="addQuestionBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-plus-circle me-2"></i>Добавить вопрос
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="addQuestionBtn">
+                                    <li><a class="dropdown-item" href="#" onclick="addQuestion('single')"><i class="bi bi-record-circle me-2"></i>Одиночный выбор</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="addQuestion('multiple')"><i class="bi bi-check-square me-2"></i>Множественный выбор</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="addQuestion('text')"><i class="bi bi-textarea-t me-2"></i>Открытый ответ</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Шаблон вопроса с одиночным выбором (будет клонироваться) -->
+                        <div id="singleChoiceTemplate" style="display: none;">
+                            <div class="card mb-3 question-card" data-type="single">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="bi bi-record-circle me-2"></i>Вопрос <span class="question-number"></span> - Одиночный выбор</h6>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Текст вопроса <span class="text-danger">*</span></label>
+                                        <textarea class="form-control question-text" rows="2" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Варианты ответов <span class="text-danger">*</span></label>
+                                        <div class="options-container">
+                                            <div class="input-group mb-2 option-item">
+                                                <div class="input-group-text">
+                                                    <input class="form-check-input mt-0 option-correct" type="radio" name="correct_0" checked>
+                                                </div>
+                                                <input type="text" class="form-control option-text" placeholder="Вариант ответа" required>
+                                                <button class="btn btn-outline-danger" type="button" onclick="removeOption(this)" disabled>
+                                                    <i class="bi bi-dash-circle"></i>
+                                                </button>
+                                            </div>
+                                            <div class="input-group mb-2 option-item">
+                                                <div class="input-group-text">
+                                                    <input class="form-check-input mt-0 option-correct" type="radio" name="correct_0">
+                                                </div>
+                                                <input type="text" class="form-control option-text" placeholder="Вариант ответа" required>
+                                                <button class="btn btn-outline-danger" type="button" onclick="removeOption(this)">
+                                                    <i class="bi bi-dash-circle"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOption(this, 'radio')">
+                                                <i class="bi bi-plus-circle me-1"></i>Добавить вариант ответа
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Баллы за вопрос</label>
+                                                <input type="number" class="form-control question-points" min="1" max="100" value="10">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Шаблон вопроса с множественным выбором (будет клонироваться) -->
+                        <div id="multipleChoiceTemplate" style="display: none;">
+                            <div class="card mb-3 question-card" data-type="multiple">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="bi bi-check-square me-2"></i>Вопрос <span class="question-number"></span> - Множественный выбор</h6>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Текст вопроса <span class="text-danger">*</span></label>
+                                        <textarea class="form-control question-text" rows="2" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Варианты ответов <span class="text-danger">*</span>
+                                            <small class="text-muted">(отметьте все правильные ответы)</small>
+                                        </label>
+                                        <div class="options-container">
+                                            <div class="input-group mb-2 option-item">
+                                                <div class="input-group-text">
+                                                    <input class="form-check-input mt-0 option-correct" type="checkbox" checked>
+                                                </div>
+                                                <input type="text" class="form-control option-text" placeholder="Вариант ответа" required>
+                                                <button class="btn btn-outline-danger" type="button" onclick="removeOption(this)" disabled>
+                                                    <i class="bi bi-dash-circle"></i>
+                                                </button>
+                                            </div>
+                                            <div class="input-group mb-2 option-item">
+                                                <div class="input-group-text">
+                                                    <input class="form-check-input mt-0 option-correct" type="checkbox">
+                                                </div>
+                                                <input type="text" class="form-control option-text" placeholder="Вариант ответа" required>
+                                                <button class="btn btn-outline-danger" type="button" onclick="removeOption(this)">
+                                                    <i class="bi bi-dash-circle"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOption(this, 'checkbox')">
+                                                <i class="bi bi-plus-circle me-1"></i>Добавить вариант ответа
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Баллы за вопрос</label>
+                                                <input type="number" class="form-control question-points" min="1" max="100" value="15">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Шаблон вопроса с текстовым ответом (будет клонироваться) -->
+                        <div id="textQuestionTemplate" style="display: none;">
+                            <div class="card mb-3 question-card" data-type="text">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="bi bi-textarea-t me-2"></i>Вопрос <span class="question-number"></span> - Открытый ответ</h6>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Текст вопроса <span class="text-danger">*</span></label>
+                                        <textarea class="form-control question-text" rows="2" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Правильный ответ <span class="text-danger">*</span></label>
+                                        <textarea class="form-control correct-answer" rows="2" placeholder="Введите правильный ответ" required></textarea>
+                                        <div class="form-text">Введите ожидаемый ответ на вопрос. Ответ студента будет сравниваться с этим эталоном.</div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Баллы за вопрос</label>
+                                                <input type="number" class="form-control question-points" min="1" max="100" value="20">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" id="backToInfoBtn">Назад</button>
+                            <button type="submit" class="btn btn-success">Сохранить тест</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" id="testInfoFooter">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary d-none" id="footerNextBtn">Далее</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Переключение между шагами создания теста
+        const testInfoStep = document.getElementById('testInfoStep');
+        const questionsStep = document.getElementById('questionsStep');
+        const testInfoFooter = document.getElementById('testInfoFooter');
+        const goToQuestionsBtn = document.getElementById('goToQuestionsBtn');
+        const backToInfoBtn = document.getElementById('backToInfoBtn');
+        const footerNextBtn = document.getElementById('footerNextBtn');
+        
+        if (goToQuestionsBtn) {
+            goToQuestionsBtn.addEventListener('click', function() {
+                // Валидация формы
+                const title = document.getElementById('testTitle').value.trim();
+                if (!title) {
+                    alert('Пожалуйста, введите название теста');
+                    return;
+                }
+                
+                testInfoStep.style.display = 'none';
+                questionsStep.style.display = 'block';
+                testInfoFooter.style.display = 'none';
+            });
+        }
+        
+        if (backToInfoBtn) {
+            backToInfoBtn.addEventListener('click', function() {
+                testInfoStep.style.display = 'block';
+                questionsStep.style.display = 'none';
+                testInfoFooter.style.display = 'block';
+            });
+        }
+        
+        if (footerNextBtn) {
+            footerNextBtn.addEventListener('click', function() {
+                goToQuestionsBtn.click();
+            });
+        }
+        
+        // Обработка формы создания теста
+        const createTestForm = document.getElementById('createTestForm');
+        if (createTestForm) {
+            createTestForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Если мы на шаге информации, переходим к вопросам
+                if (testInfoStep.style.display !== 'none') {
+                    goToQuestionsBtn.click();
+                    return;
+                }
+                
+                // Собираем все вопросы
+                const questions = [];
+                const questionCards = document.querySelectorAll('#questionsContainer .question-card');
+                
+                // Проверяем, есть ли вопросы
+                if (questionCards.length === 0) {
+                    alert('Необходимо добавить хотя бы один вопрос!');
+                    return;
+                }
+                
+                // Собираем данные вопросов
+                questionCards.forEach(card => {
+                    const questionType = card.getAttribute('data-type');
+                    const questionText = card.querySelector('.question-text').value.trim();
+                    const questionPoints = parseInt(card.querySelector('.question-points').value);
+                    
+                    if (questionType === 'single') {
+                        const options = [];
+                        let correctAnswerIndex = 0;
+                        
+                        card.querySelectorAll('.option-item').forEach((item, index) => {
+                            const optionText = item.querySelector('.option-text').value.trim();
+                            const isCorrect = item.querySelector('.option-correct').checked;
+                            
+                            options.push(optionText);
+                            if (isCorrect) {
+                                correctAnswerIndex = index;
+                            }
+                        });
+                        
+                        questions.push({
+                            question: questionText,
+                            type: 'single',
+                            options: options,
+                            correct_answer: correctAnswerIndex,
+                            points: questionPoints
+                        });
+                    } else if (questionType === 'multiple') {
+                        const options = [];
+                        const correctAnswers = [];
+                        
+                        card.querySelectorAll('.option-item').forEach((item, index) => {
+                            const optionText = item.querySelector('.option-text').value.trim();
+                            const isCorrect = item.querySelector('.option-correct').checked;
+                            
+                            options.push(optionText);
+                            if (isCorrect) {
+                                correctAnswers.push(index);
+                            }
+                        });
+                        
+                        questions.push({
+                            question: questionText,
+                            type: 'multiple',
+                            options: options,
+                            correct_answers: correctAnswers,
+                            points: questionPoints
+                        });
+                    } else if (questionType === 'text') {
+                        const correctAnswer = card.querySelector('.correct-answer').value.trim();
+                        
+                        questions.push({
+                            question: questionText,
+                            type: 'text',
+                            correct_answer: correctAnswer,
+                            points: questionPoints
+                        });
+                    }
+                });
+                
+                // Устанавливаем JSON с вопросами в скрытое поле
+                document.getElementById('questionsData').value = JSON.stringify(questions);
+                
+                // Показываем яркую индикацию о работе кнопки
+                const saveButton = document.querySelector('button[type="submit"]');
+                const originalText = saveButton.innerHTML;
+                
+                // Создаем красную мигающую лампочку рядом с текстом кнопки
+                saveButton.innerHTML = '<span class="indicator-dot"></span> Сохранение...';
+                saveButton.classList.add('saving-active');
+                
+                // Добавляем всплывающее сообщение над страницей
+                const indicator = document.createElement('div');
+                indicator.className = 'save-indicator';
+                indicator.innerHTML = 'КНОПКА РАБОТАЕТ! Сохранение теста...';
+                document.body.appendChild(indicator);
+                
+                // Отправляем форму с небольшой задержкой, чтобы индикация была заметна
+                setTimeout(() => {
+                    this.submit();
+                }, 1500);
+            });
+        }
+    });
+    
+    // функция для обработки добавления вопросов
+    function addQuestion(type) {
+        // Скрываем уведомление о том, что нет вопросов
+        document.getElementById('noQuestionsAlert').style.display = 'none';
+        
+        let template;
+        if (type === 'single') {
+            template = document.getElementById('singleChoiceTemplate');
+        } else if (type === 'multiple') {
+            template = document.getElementById('multipleChoiceTemplate');
+        } else if (type === 'text') {
+            template = document.getElementById('textQuestionTemplate');
+        }
+        
+        const clone = template.cloneNode(true);
+        clone.style.display = 'block';
+        clone.id = ''; // Убираем id шаблона
+        
+        document.getElementById('questionsContainer').appendChild(clone);
+        
+        // Генерируем уникальное имя для радиокнопок в вопросе
+        if (type === 'single') {
+            const timestamp = Date.now();
+            const radios = clone.querySelectorAll('.option-correct[type="radio"]');
+            radios.forEach(radio => {
+                radio.name = 'correct_' + timestamp;
+            });
+        }
+        
+        // Обновляем нумерацию вопросов
+        updateQuestionNumbers();
+    }
+    
+    // Функция для обновления нумерации вопросов
+    function updateQuestionNumbers() {
+        const numbers = document.querySelectorAll('.question-number');
+        numbers.forEach((span, index) => {
+            span.textContent = index + 1;
+        });
+    }
+    
+    // Функция для добавления варианта ответа
+    function addOption(button, type) {
+        const card = button.closest('.question-card');
+        const optionsContainer = card.querySelector('.options-container');
+        const existingOptions = optionsContainer.querySelectorAll('.option-item');
+        
+        const newOption = document.createElement('div');
+        newOption.className = 'input-group mb-2 option-item';
+        
+        // Для радиокнопок используем имя группы из первой кнопки
+        let inputName = '';
+        if (type === 'radio') {
+            const firstRadio = card.querySelector('.option-correct');
+            inputName = firstRadio ? firstRadio.name : 'correct_' + Date.now();
+        }
+        
+        newOption.innerHTML = `
+            <div class="input-group-text">
+                <input class="form-check-input mt-0 option-correct" type="${type}" ${type === 'radio' ? 'name="' + inputName + '"' : ''}>
+            </div>
+            <input type="text" class="form-control option-text" placeholder="Вариант ответа" required>
+            <button class="btn btn-outline-danger" type="button" onclick="removeOption(this)">
+                <i class="bi bi-dash-circle"></i>
+            </button>
+        `;
+        
+        optionsContainer.appendChild(newOption);
+        
+        // Если есть только два варианта, активируем кнопки удаления
+        if (existingOptions.length === 2) {
+            existingOptions.forEach(option => {
+                option.querySelector('button').disabled = false;
+            });
+        }
+    }
+    
+    // Функция для удаления варианта ответа
+    function removeOption(button) {
+        const optionItem = button.closest('.option-item');
+        const optionsContainer = optionItem.parentElement;
+        const allOptions = optionsContainer.querySelectorAll('.option-item');
+        
+        // Запрещаем удаление, если осталось всего 2 варианта
+        if (allOptions.length <= 3) {
+            allOptions.forEach(option => {
+                option.querySelector('button').disabled = true;
+            });
+        }
+        
+        optionItem.remove();
+    }
+    
+    // Функция удаления вопроса
+    function removeQuestion(button) {
+        if (confirm('Вы действительно хотите удалить этот вопрос?')) {
+            const card = button.closest('.card');
+            card.remove();
+            
+            // Обновляем нумерацию вопросов
+            updateQuestionNumbers();
+            
+            // Если нет больше вопросов, показываем уведомление
+            const container = document.getElementById('questionsContainer');
+            if (container.children.length === 0) {
+                document.getElementById('noQuestionsAlert').style.display = 'block';
+            }
+        }
+    }
+    
+    // Обработка модального окна удаления теста
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработчики для кнопок удаления
+        const deleteButtons = document.querySelectorAll('.delete-test-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const testId = this.getAttribute('data-test-id');
+                const testTitle = this.getAttribute('data-test-title');
+                
+                document.getElementById('deleteTestId').value = testId;
+                document.getElementById('deleteTestTitle').textContent = testTitle;
+                document.getElementById('deleteTestForm').action = `/teacher/tests/delete/${testId}`;
+            });
+        });
+
+        // Добавляем обработчики для кнопок "Раскрыть все ответы"
+        const toggleButtons = document.querySelectorAll('.toggle-all-questions');
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const accordionId = this.getAttribute('data-accordion-id');
+                const accordion = document.getElementById(accordionId);
+                const allCollapses = accordion.querySelectorAll('.accordion-collapse');
+                const allButtons = accordion.querySelectorAll('.accordion-button');
+                
+                // Проверяем, все ли элементы раскрыты
+                const allExpanded = Array.from(allCollapses).every(item => item.classList.contains('show'));
+                
+                if (allExpanded) {
+                    // Свернуть все
+                    allCollapses.forEach(item => {
+                        item.classList.remove('show');
+                    });
+                    allButtons.forEach(btn => {
+                        btn.classList.add('collapsed');
+                        btn.setAttribute('aria-expanded', 'false');
+                    });
+                    this.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Раскрыть все ответы';
+                } else {
+                    // Раскрыть все
+                    allCollapses.forEach(item => {
+                        item.classList.add('show');
+                    });
+                    allButtons.forEach(btn => {
+                        btn.classList.remove('collapsed');
+                        btn.setAttribute('aria-expanded', 'true');
+                    });
+                    this.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Свернуть все ответы';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,488 @@
+{% extends "layout.html" %}
+
+{% block title %}Управление пользователями{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню -->
+    <div class="col-md-3 sidebar">
+        <h4 class="mb-3">Панель администратора</h4>
+        <div class="nav flex-column nav-pills">
+            <a class="nav-link" href="/admin/dashboard">
+                <i class="bi bi-speedometer2 me-2"></i>Обзор
+            </a>
+            <a class="nav-link active" href="/admin/users">
+                <i class="bi bi-people me-2"></i>Управление пользователями
+            </a>
+            <a class="nav-link" href="/admin/groups">
+                <i class="bi bi-collection me-2"></i>Управление группами
+            </a>
+            <a class="nav-link" href="/admin/tests">
+                <i class="bi bi-journal-text me-2"></i>Управление тестами
+            </a>
+            <a class="nav-link" href="/admin/backup">
+                <i class="bi bi-cloud-arrow-down me-2"></i>Резервное копирование
+            </a>
+        </div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="col-md-9">
+        <div class="page-title d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-people me-2"></i>Управление пользователями</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="bi bi-person-plus me-2"></i>Добавить пользователя
+            </button>
+        </div>
+        
+        <!-- Таблица пользователей -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Список пользователей</h5>
+                <div class="row mt-3">
+                    <div class="col-md-5">
+                        <form action="{{ url_for('admin_users') }}" method="get" class="d-flex">
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-sm" name="query" placeholder="Поиск..." value="{{ current_search_query }}">
+                                <button class="btn btn-outline-secondary btn-sm" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-7 mt-2 mt-md-0">
+                        <div class="d-flex flex-wrap justify-content-end gap-1">
+                            <div class="btn-group btn-group-sm me-1">
+                                <a href="{{ url_for('admin_users') }}" class="btn {{ 'btn-secondary' if not current_role_filter else 'btn-outline-secondary' }}">Все</a>
+                                <a href="{{ url_for('admin_users', role='admin') }}" class="btn {{ 'btn-danger' if current_role_filter == 'admin' else 'btn-outline-danger' }}">Админ.</a>
+                                <a href="{{ url_for('admin_users', role='teacher') }}" class="btn {{ 'btn-primary' if current_role_filter == 'teacher' else 'btn-outline-primary' }}">Преп.</a>
+                                <a href="{{ url_for('admin_users', role='student') }}" class="btn {{ 'btn-success' if current_role_filter == 'student' else 'btn-outline-success' }}">Студ.</a>
+                            </div>
+                            
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="groupFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    {{ 'Группа: ' + groups[current_group_filter].name if current_group_filter and current_group_filter in groups else 'Группа' }}
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="groupFilterDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users', role=current_role_filter) }}">Все группы</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    {% for group_id, group in groups.items() %}
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users', role=current_role_filter, group=group_id) }}">{{ group.name }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Логин</th>
+                                <th scope="col">ФИО</th>
+                                <th scope="col">Пароль</th>
+                                <th scope="col">Роль</th>
+                                <th scope="col">Статус</th>
+                                <th scope="col">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for username, user in users.items() %}
+                            <tr>
+                                <th scope="row">{{ loop.index }}</th>
+                                <td>{{ username }}</td>
+                                <td>{{ user.first_name }} {{ user.last_name }} {{ user.middle_name }}</td>
+                                <td>{{ user.password if user.password else "Password123" }}</td>
+                                <td>
+                                    {% if user.role == 'admin' %}
+                                    <span class="badge bg-danger">Администратор</span>
+                                    {% elif user.role == 'teacher' %}
+                                    <span class="badge bg-primary">Преподаватель</span>
+                                    {% elif user.role == 'student' %}
+                                    <span class="badge bg-success">Студент</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ user.role }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.lockout_until and user.lockout_until|int > time() %}
+                                    <span class="badge bg-danger">Заблокирован</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Активен</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editUserModal{{ username }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ username }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Модальное окно редактирования пользователя -->
+                                    <div class="modal fade" id="editUserModal{{ username }}" tabindex="-1" aria-labelledby="editUserModalLabel{{ username }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="editUserModalLabel{{ username }}">Редактирование пользователя</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form action="/admin/users/edit/{{ username }}" method="post">
+                                                    <div class="modal-body">
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-6">
+                                                                <label for="username{{ username }}" class="form-label">Логин</label>
+                                                                <input type="text" class="form-control" id="username{{ username }}" value="{{ username }}" disabled>
+                                                                <div class="form-text">Логин нельзя изменить</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label for="new_password{{ username }}" class="form-label">Пароль</label>
+                                                                <div class="input-group">
+                                                                    <input type="password" class="form-control" id="new_password{{ username }}" name="new_password">
+                                                                    <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="#new_password{{ username }}">
+                                                                        <i class="bi bi-eye"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="form-text">Оставьте пустым, чтобы не менять</div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-6">
+                                                                <label for="role{{ username }}" class="form-label">Роль</label>
+                                                                <select class="form-select edit-role-select" id="role{{ username }}" name="role" data-username="{{ username }}">
+                                                                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Администратор</option>
+                                                                    <option value="teacher" {% if user.role == 'teacher' %}selected{% endif %}>Преподаватель</option>
+                                                                    <option value="student" {% if user.role == 'student' %}selected{% endif %}>Студент</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-4">
+                                                                <label for="first_name{{ username }}" class="form-label">Имя</label>
+                                                                <input type="text" class="form-control" id="first_name{{ username }}" name="first_name" value="{{ user.first_name }}">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <label for="last_name{{ username }}" class="form-label">Фамилия</label>
+                                                                <input type="text" class="form-control" id="last_name{{ username }}" name="last_name" value="{{ user.last_name }}">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <label for="middle_name{{ username }}" class="form-label">Отчество</label>
+                                                                <input type="text" class="form-control" id="middle_name{{ username }}" name="middle_name" value="{{ user.middle_name }}">
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div id="student-group-container-{{ username }}" class="mb-3" {% if user.role != 'student' %}style="display: none;"{% endif %}>
+                                                            <label for="group_id{{ username }}" class="form-label">Группа</label>
+                                                            <select class="form-select" id="group_id{{ username }}" name="group_id">
+                                                                <option value="">Не выбрана</option>
+                                                                {% for group_id, group in groups.items() %}
+                                                                <option value="{{ group_id }}" {% if user.role == 'student' and username in group.students %}selected{% endif %}>{{ group.name }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Модальное окно удаления пользователя -->
+                                    <div class="modal fade" id="deleteUserModal{{ username }}" tabindex="-1" aria-labelledby="deleteUserModalLabel{{ username }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteUserModalLabel{{ username }}">Удаление пользователя</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Вы действительно хотите удалить пользователя <strong>{{ username }}</strong>?</p>
+                                                    <div class="alert alert-warning">
+                                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                                        Это действие нельзя отменить. Все данные пользователя будут удалены.
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <form action="/admin/users/delete/{{ username }}" method="post">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                        <button type="submit" class="btn btn-danger">Удалить</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center pagination-sm mb-0">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-chevron-left"></i></a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления пользователя -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">Добавление нового пользователя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/admin/users/create" method="post" id="createUserForm">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="username" class="form-label">Логин <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="username" name="username" required minlength="3">
+                            <div class="form-text">Минимум 3 символа, будет использоваться для входа</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password" class="form-label">Пароль <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" required minlength="8">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Минимум 8 символов, должен содержать буквы и цифры</div>
+                            <div class="invalid-feedback" id="passwordFeedback"></div>
+                        </div>                     
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="first_name" class="form-label">Имя <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="last_name" class="form-label">Фамилия <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="middle_name" class="form-label">Отчество</label>
+                            <input type="text" class="form-control" id="middle_name" name="middle_name">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="role" class="form-label">Роль <span class="text-danger">*</span></label>
+                            <select class="form-select" id="role" name="role" required onchange="toggleStudentGroup()">
+                                <option value="">Выберите роль</option>
+                                <option value="admin">Администратор</option>
+                                <option value="teacher">Преподаватель</option>
+                                <option value="student">Студент</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    
+                    <div id="student-group-container" class="mb-3" style="display: none;">
+                        <label for="group_id" class="form-label">Группа</label>
+                        <select class="form-select" id="group_id" name="group_id">
+                            <option value="">Не выбрана</option>
+                            {% for group_id, group in groups.items() %}
+                            <option value="{{ group_id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Группа, к которой будет принадлежать студент</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary" id="createUserBtn">Создать пользователя</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Функция для показа/скрытия выбора группы в форме создания
+    function toggleStudentGroup() {
+        const roleSelect = document.getElementById('role');
+        const groupContainer = document.getElementById('student-group-container');
+        
+        if (roleSelect.value === 'student') {
+            groupContainer.style.display = 'block';
+        } else {
+            groupContainer.style.display = 'none';
+            document.getElementById('group_id').value = '';
+        }
+    }
+    
+    // Функция валидации пароля
+    function validatePassword(password) {
+        const minLength = 8;
+        const hasLetter = /[a-zA-Z]/.test(password);
+        const hasDigit = /[0-9]/.test(password);
+        
+        if (password.length < minLength) {
+            return {
+                isValid: false,
+                message: `Пароль должен содержать минимум ${minLength} символов`
+            };
+        }
+        
+        if (!hasLetter || !hasDigit) {
+            return {
+                isValid: false,
+                message: "Пароль должен содержать как минимум одну букву и одну цифру"
+            };
+        }
+        
+        return {
+            isValid: true,
+            message: ""
+        };
+    }
+
+    // Автоматическое открытие модального окна по запросу
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем наличие параметра showModal в URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('showModal') === 'add') {
+            // Открываем модальное окно добавления пользователя
+            const addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
+            addUserModal.show();
+        }
+        
+        // Обработчик для валидации пароля
+        const passwordInput = document.getElementById('password');
+        const createBtn = document.getElementById('createUserBtn');
+        const createUserForm = document.getElementById('createUserForm');
+        
+        if (passwordInput && createBtn && createUserForm) {
+            let passwordValid = false;
+            
+            passwordInput.addEventListener('input', function() {
+                const result = validatePassword(this.value);
+                const feedbackElement = document.getElementById('passwordFeedback');
+                
+                passwordValid = result.isValid;
+                
+                if (!result.isValid && this.value.length > 0) {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                    feedbackElement.textContent = result.message;
+                    createBtn.disabled = true;
+                } else if (this.value.length > 0) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                    feedbackElement.textContent = '';
+                    createBtn.disabled = false;
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.remove('is-invalid');
+                    feedbackElement.textContent = '';
+                    createBtn.disabled = true;
+                }
+            });
+            
+            // Валидация формы перед отправкой
+            createUserForm.addEventListener('submit', function(e) {
+                const result = validatePassword(passwordInput.value);
+                if (!result.isValid) {
+                    e.preventDefault();
+                    const feedbackElement = document.getElementById('passwordFeedback');
+                    passwordInput.classList.add('is-invalid');
+                    feedbackElement.textContent = result.message;
+                    return false;
+                }
+                return true;
+            });
+            
+            // Начальная валидация формы
+            if (passwordInput.value) {
+                passwordInput.dispatchEvent(new Event('input'));
+            } else {
+                createBtn.disabled = true;
+            }
+        }
+        
+        // Обработчик для кнопки показа/скрытия пароля при создании
+        const toggleBtn = document.getElementById('togglePassword');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                const passwordInput = document.getElementById('password');
+                const icon = this.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            });
+        }
+        
+        // Обработчики для кнопок показа/скрытия пароля при редактировании
+        const toggleBtns = document.querySelectorAll('.toggle-password-btn');
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const passwordInput = document.querySelector(targetId);
+                const icon = this.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            });
+        });
+        
+        // Обработчики для выпадающих списков ролей в формах редактирования
+        const roleSelects = document.querySelectorAll('.edit-role-select');
+        roleSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                const username = this.getAttribute('data-username');
+                const groupContainer = document.getElementById(`student-group-container-${username}`);
+                
+                if (this.value === 'student') {
+                    groupContainer.style.display = 'block';
+                } else {
+                    groupContainer.style.display = 'none';
+                    document.getElementById(`group_id${username}`).value = '';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

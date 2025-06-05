@@ -1,0 +1,319 @@
+{% extends 'layout.html' %}
+
+{% block title %}Редактирование теста{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Редактирование теста</h1>
+        <a href="{{ url_for('admin_tests') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Вернуться к тестам
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form id="create-test-form" action="{{ url_for('admin_tests_save') }}" method="post">
+                <input type="hidden" name="test_id" value="{{ test_id }}">
+                <input type="hidden" name="questions_data" id="questions-data" value="">
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="title" class="form-label">Название теста</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ test.title }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="category" class="form-label">Категория</label>
+                        <input type="text" class="form-control" id="category" name="category" value="{{ test.category }}" placeholder="Например: Математика, Информатика и т.д.">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="description" class="form-label">Описание теста</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Опишите, для чего предназначен этот тест...">{{ test.description }}</textarea>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="duration" class="form-label">Длительность (минуты)</label>
+                        <input type="number" class="form-control" id="duration" name="duration" value="{{ test.duration|default(30) }}" min="1" max="240">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="passing-score" class="form-label">Проходной балл (%)</label>
+                        <input type="number" class="form-control" id="passing-score" name="passing_score" value="{{ test.passing_score|default(70) }}" min="1" max="100">
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">Вопросы</h4>
+                        <button type="button" class="btn btn-primary" id="add-question-btn">
+                            <i class="bi bi-plus-circle"></i> Добавить вопрос
+                        </button>
+                    </div>
+                    
+                    <div id="questions-container" class="questions-container">
+                        <!-- Здесь будут динамически добавляться вопросы -->
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <button type="submit" class="btn btn-success" id="save-test-btn">
+                        <i class="bi bi-check-circle"></i> Сохранить тест
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Шаблон для нового вопроса (скрыт) -->
+<template id="question-template">
+    <div class="card mb-3 question-card">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 question-number">Вопрос #1</h5>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-question-btn">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Текст вопроса</label>
+                <input type="text" class="form-control question-text" placeholder="Введите текст вопроса" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Варианты ответов</label>
+                <div class="options-container">
+                    <!-- Здесь будут динамически добавляться варианты ответов -->
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2 add-option-btn">
+                    <i class="bi bi-plus"></i> Добавить вариант ответа
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Шаблон для нового варианта ответа (скрыт) -->
+<template id="option-template">
+    <div class="input-group mb-2 option-row">
+        <div class="input-group-text">
+            <input class="form-check-input option-correct" type="radio" name="option-correct-0">
+        </div>
+        <input type="text" class="form-control option-text" placeholder="Вариант ответа" required>
+        <button class="btn btn-outline-danger remove-option-btn" type="button">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+</template>
+
+<!-- JavaScript для управления формой создания теста -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Загружаем существующие вопросы из JSON
+    const questionsData = {{ questions_json|safe }};
+    const questionsContainer = document.getElementById('questions-container');
+    const questionsDataInput = document.getElementById('questions-data');
+    
+    // Функция для добавления нового вопроса
+    function addQuestion(questionData = null) {
+        const template = document.getElementById('question-template');
+        const questionElement = template.content.cloneNode(true).querySelector('.question-card');
+        
+        // Обновляем номер вопроса
+        const questionCount = questionsContainer.children.length + 1;
+        questionElement.querySelector('.question-number').textContent = `Вопрос #${questionCount}`;
+        
+        // Устанавливаем текст вопроса, если есть данные
+        if (questionData && questionData.question) {
+            questionElement.querySelector('.question-text').value = questionData.question;
+        }
+        
+        // Настраиваем обработчик для кнопки удаления вопроса
+        const removeQuestionBtn = questionElement.querySelector('.remove-question-btn');
+        removeQuestionBtn.addEventListener('click', function() {
+            questionElement.remove();
+            updateQuestionNumbers();
+            saveQuestionsData();
+        });
+        
+        // Настраиваем обработчик для кнопки добавления варианта ответа
+        const addOptionBtn = questionElement.querySelector('.add-option-btn');
+        const optionsContainer = questionElement.querySelector('.options-container');
+        
+        addOptionBtn.addEventListener('click', function() {
+            addOption(optionsContainer, questionCount - 1);
+            saveQuestionsData();
+        });
+        
+        // Добавляем варианты ответов, если есть данные
+        if (questionData && questionData.options) {
+            questionData.options.forEach((option, index) => {
+                let isCorrect = false;
+                
+                // Определяем, является ли вариант правильным
+                if (typeof questionData.correct_answer === 'number') {
+                    isCorrect = index === questionData.correct_answer;
+                } else if (Array.isArray(questionData.correct_answers)) {
+                    isCorrect = questionData.correct_answers.includes(index);
+                } else if (option.is_correct) {
+                    isCorrect = true;
+                }
+                
+                const optionText = typeof option === 'string' ? option : option.text;
+                addOption(optionsContainer, questionCount - 1, optionText, isCorrect);
+            });
+        } else {
+            // Добавляем два пустых варианта ответа по умолчанию
+            addOption(optionsContainer, questionCount - 1);
+            addOption(optionsContainer, questionCount - 1);
+        }
+        
+        // Добавляем вопрос в контейнер
+        questionsContainer.appendChild(questionElement);
+        
+        // Обновляем данные вопросов
+        saveQuestionsData();
+    }
+    
+    // Функция для добавления нового варианта ответа
+    function addOption(container, questionIndex, optionText = '', isCorrect = false) {
+        const template = document.getElementById('option-template');
+        const optionElement = template.content.cloneNode(true).querySelector('.option-row');
+        
+        // Устанавливаем текст и состояние варианта
+        optionElement.querySelector('.option-text').value = optionText;
+        const radioInput = optionElement.querySelector('.option-correct');
+        radioInput.name = `option-correct-${questionIndex}`;
+        radioInput.checked = isCorrect;
+        
+        // Настраиваем обработчик для кнопки удаления варианта
+        const removeOptionBtn = optionElement.querySelector('.remove-option-btn');
+        removeOptionBtn.addEventListener('click', function() {
+            optionElement.remove();
+            saveQuestionsData();
+        });
+        
+        // Добавляем обработчики для изменения текста и состояния
+        optionElement.querySelector('.option-text').addEventListener('input', saveQuestionsData);
+        radioInput.addEventListener('change', saveQuestionsData);
+        
+        // Добавляем вариант в контейнер
+        container.appendChild(optionElement);
+    }
+    
+    // Функция для обновления номеров вопросов
+    function updateQuestionNumbers() {
+        const questionCards = questionsContainer.querySelectorAll('.question-card');
+        questionCards.forEach((card, index) => {
+            card.querySelector('.question-number').textContent = `Вопрос #${index + 1}`;
+            
+            // Обновляем имена радиокнопок для каждого вопроса
+            const radioInputs = card.querySelectorAll('.option-correct');
+            radioInputs.forEach(input => {
+                input.name = `option-correct-${index}`;
+            });
+        });
+    }
+    
+    // Функция для сохранения данных вопросов в скрытое поле
+    function saveQuestionsData() {
+        const questions = [];
+        
+        const questionCards = questionsContainer.querySelectorAll('.question-card');
+        questionCards.forEach((card, questionIndex) => {
+            const questionText = card.querySelector('.question-text').value;
+            const options = [];
+            let correctAnswerIndex = -1;
+            
+            const optionRows = card.querySelectorAll('.option-row');
+            optionRows.forEach((row, optionIndex) => {
+                const optionText = row.querySelector('.option-text').value;
+                const isCorrect = row.querySelector('.option-correct').checked;
+                
+                options.push(optionText);
+                
+                if (isCorrect) {
+                    correctAnswerIndex = optionIndex;
+                }
+            });
+            
+            if (options.length > 0 && correctAnswerIndex >= 0) {
+                questions.push({
+                    question: questionText,
+                    options: options,
+                    correct_answer: correctAnswerIndex
+                });
+            }
+        });
+        
+        questionsDataInput.value = JSON.stringify(questions);
+        console.log("Сохраненные вопросы:", questions);
+    }
+    
+    // Кнопка добавления нового вопроса
+    const addQuestionBtn = document.getElementById('add-question-btn');
+    addQuestionBtn.addEventListener('click', function() {
+        addQuestion();
+    });
+    
+    // Обработчик для кнопки сохранения, чтобы показать индикатор
+    const saveTestBtn = document.getElementById('save-test-btn');
+    saveTestBtn.addEventListener('click', function() {
+        // Проверяем, есть ли вопросы
+        if (questionsContainer.children.length === 0) {
+            alert('Добавьте хотя бы один вопрос!');
+            return false;
+        }
+        
+        // Сохраняем данные вопросов перед отправкой
+        saveQuestionsData();
+        
+        // Визуальная индикация сохранения
+        saveTestBtn.classList.add('btn-danger');
+        saveTestBtn.classList.remove('btn-success');
+        
+        // Форма будет автоматически отправлена
+        return true;
+    });
+    
+    // Форма создания теста
+    const createTestForm = document.getElementById('create-test-form');
+    createTestForm.addEventListener('submit', function(e) {
+        // Дополнительная проверка перед отправкой
+        const questionsData = document.getElementById('questions-data').value;
+        const questions = JSON.parse(questionsData || '[]');
+        
+        if (questions.length === 0) {
+            e.preventDefault();
+            alert('Добавьте хотя бы один вопрос!');
+            return false;
+        }
+        
+        // Продолжаем отправку
+        return true;
+    });
+    
+    // Загружаем существующие вопросы, если они есть
+    if (questionsData && questionsData.length > 0) {
+        console.log("Загруженные вопросы:", questionsData);
+        questionsData.forEach(questionData => {
+            addQuestion(questionData);
+        });
+    } else {
+        // Если вопросов нет, добавляем пустой вопрос
+        addQuestion();
+    }
+    
+    // Сохраняем начальные данные
+    saveQuestionsData();
+});
+</script>
+{% endblock %}
