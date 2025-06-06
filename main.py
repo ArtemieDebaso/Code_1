@@ -509,9 +509,41 @@ def new_create_test():
 def create_test():
     return render_template('teacher/create_test.html')  
 
-@app.route('/student/test_results')  # URL-адрес страницы
+@app.route('/student/test_results')
 def test_results():
-    return render_template('student/test_results.html') 
+    """Роут для отображения результатов теста студента"""
+    # Пример данных (замените на реальные из вашей БД/логики)
+    test_data = {
+        'test_title': "Основы алгебры",
+        'completion_date': datetime.now(),  # Текущая дата и время
+        'time_spent': 45,
+        'category': "Математика",
+        'score': 27,
+        'max_score': 30,
+        'grade': 4.5,
+        'correct_answers': 9,
+        'incorrect_answers': 1,
+        'total_questions': 10,
+        'detailed_results': [
+            {
+                'question_text': "Решите уравнение: 2x + 5 = 15",
+                'student_answer': "x = 5",
+                'correct_answer': "x = 5",
+                'is_correct': True,
+                'points_earned': 3,
+                'max_points': 3
+            },
+            {
+                'question_text': "Найдите производную функции f(x) = x²",
+                'student_answer': "f'(x) = x",
+                'correct_answer': "f'(x) = 2x",
+                'is_correct': False,
+                'points_earned': 0,
+                'max_points': 3
+            }
+        ]
+    }
+    return render_template('student/test_results.html', result=test_data)
 
 
     
