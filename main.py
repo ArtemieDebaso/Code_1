@@ -506,7 +506,7 @@ def new_create_test():
     return render_template('teacher/new_create_test.html')  # Путь к файлу в templates/
 
 @app.route('/teacher/create_test')  # URL-адрес страницы
-def new_test_form():
+def create_test():
     return render_template('teacher/create_test.html')  # Путь к файлу в templates/
     
     
