@@ -2,6 +2,25 @@
 
 {% block title %}Доступные тесты{% endblock %}
 
+{% block head %}
+<style>
+    .test-completed {
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+        background: linear-gradient(145deg, #f8fff9, #ffffff);
+    }
+    
+    .test-completed .badge.bg-success {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <!-- Боковое меню -->
@@ -57,7 +76,7 @@
         <div class="row row-cols-1 g-4">
             {% for test in tests %}
             <div class="col">
-                <div class="card h-100 {% if test.already_taken %}border-success{% endif %}">
+                <div class="card h-100 {% if test.already_taken %}border-success test-completed{% endif %}">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <h5 class="card-title">
@@ -83,7 +102,7 @@
                         {% if test.already_taken and test.result_data %}
                         <div class="alert alert-success py-2">
                             <div class="d-flex justify-content-between align-items-center">
-                                <small><strong>Результат:</strong> {{ test.result_data.score }}/{{ test.result_data.max_score }} баллов ({{ test.result_data.grade }})</small>
+                                <small><strong>Результат:</strong> {{ test.result_data.score }}/{{ test.result_data.max_score }} (Оценка: {{ test.result_data.grade }})</small>
                                 <small class="text-muted">{{ test.result_data.completion_date|time }}</small>
                             </div>
                         </div>
