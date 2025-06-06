@@ -511,7 +511,7 @@ def create_test():
 
 @app.route('/student/test_results')  # URL-адрес страницы
 def test_results():
-    return render_template('teacher/test_results.html') 
+    return render_template('student/test_results.html') 
 
 
     
