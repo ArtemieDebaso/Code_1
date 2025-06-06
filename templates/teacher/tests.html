@@ -298,7 +298,7 @@
                 <h5 class="modal-title" id="createTestModalLabel">Создание нового теста</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="createTestForm" action="/teacher/new_create_test" method="post">
+            <form id="createTestForm" action="/teacher/tests/create" method="post">
                 <div class="modal-body">
                     <!-- Скрытое поле для JSON данных с вопросами -->
                     <input type="hidden" name="questions_data" id="questionsData" value="[]">
