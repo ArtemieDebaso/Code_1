@@ -495,19 +495,25 @@ def logout():
 
 @app.route('/teacher/new_test_form')  # URL-адрес страницы
 def new_test_form():
-    return render_template('teacher/new_test_form.html')  # Путь к файлу в templates/
+    return render_template('teacher/new_test_form.html') 
 
-@app.route('/teacher/new_test')  # URL-адрес страницы
+@app.route('/teacher/new_test')  
 def new_test():
-    return render_template('teacher/new_test.html')  # Путь к файлу в templates/
+    return render_template('teacher/new_test.html')  
 
-@app.route('/teacher/new_create_test')  # URL-адрес страницы
+@app.route('/teacher/new_create_test')  
 def new_create_test():
-    return render_template('teacher/new_create_test.html')  # Путь к файлу в templates/
+    return render_template('teacher/new_create_test.html')  
 
-@app.route('/teacher/create_test')  # URL-адрес страницы
+@app.route('/teacher/create_test')  
 def create_test():
-    return render_template('teacher/create_test.html')  # Путь к файлу в templates/
+    return render_template('teacher/create_test.html')  
+
+@app.route('/student/test_results')  # URL-адрес страницы
+def test_results():
+    return render_template('teacher/test_results.html') 
+
+
     
     
 # Создание тестовых пользователей
