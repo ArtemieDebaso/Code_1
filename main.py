@@ -498,11 +498,11 @@ def new_test_form():
     return render_template('teacher/new_test_form.html')  # Путь к файлу в templates/
 
 @app.route('/teacher/new_test')  # URL-адрес страницы
-def new_test_form():
+def new_test():
     return render_template('teacher/new_test.html')  # Путь к файлу в templates/
 
 @app.route('/teacher/new_create_test')  # URL-адрес страницы
-def new_test_form():
+def new_create_test():
     return render_template('teacher/new_create_test.html')  # Путь к файлу в templates/
 
 @app.route('/teacher/create_test')  # URL-адрес страницы
