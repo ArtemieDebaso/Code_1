@@ -990,6 +990,48 @@ def student_tests():
                 "already_taken": False
             }
         ]
+         # Если демо-тест, создаем тестовые данные
+    if test_id == "demo_test":
+        test_data = {
+            "id": "demo_test",
+            "title": "Основы реляционных баз данных",
+            "description": "Проверка базовых знаний и навыков по реляционным базам данных",
+            "category": "Базы данных",
+            "time_limit": 45,
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Что такое первичный ключ (Primary Key)",
+                    "type": "single",
+                    "points": 10,
+                    "options": [
+                        {"text": "Уникальный идентификатор записи в таблиц", "is_correct": True},
+                        {"text": "Поле для хранения временных данных", "is_correct": False},
+                        {"text": "Поле, которое может содержать NULL", "is_correct": False},
+                        {"text": "Индекс для ускорения поиска", "is_correct": False}
+                    ]
+                },
+                {
+                    "id": "q2",
+                    "text": "Какой тип связи используется в отношении один ко многим ?",
+                    "type": "single",
+                    "points": 20,
+                    "options": [
+                        {"text": "Одна запись в таблице A соответствует одной записи в таблице B", "is_correct": False},
+                        {"text": "Связь без использования внешних ключей": False},
+                        {"text": "Несколько записей в таблице A соответствуют нескольким записям в таблице B": False},
+                        {"text": "Одна запись в таблице A соответствует нескольким записям в таблице B", "is_correct": True}
+                    ]
+                },
+                {
+                    "id": "q3",
+                    "text": "Напишите оператор SQL который используется для извлечения данных из таблицы",
+                    "type": "text",
+                    "points": 15,
+                    "correct_answer": "SELECT"
+                }
+            ]
+        }
     
     return render_template('student/tests.html', 
                           username=session['username'],
@@ -1053,49 +1095,6 @@ def teacher_new_create_test():
             flash('У вас нет доступа к этому тесту', 'danger')
             return redirect(url_for('student_tests'))
     
-    # Если демо-тест, создаем тестовые данные
-    if test_id == "demo_test":
-        test_data = {
-            "id": "demo_test",
-            "title": "Основы программирования",
-            "description": "Проверка базовых знаний и навыков по программированию",
-            "category": "Программирование",
-            "time_limit": 45,
-            "questions": [
-                {
-                    "id": "q1",
-                    "text": "Что такое переменная в программировании?",
-                    "type": "single",
-                    "points": 10,
-                    "options": [
-                        {"text": "Контейнер для хранения данных", "is_correct": True},
-                        {"text": "Функция выполняющая вычисления", "is_correct": False},
-                        {"text": "Оператор управления потоком", "is_correct": False},
-                        {"text": "Тип данных", "is_correct": False}
-                    ]
-                },
-                {
-                    "id": "q2",
-                    "text": "Какие из следующих типов данных относятся к примитивным?",
-                    "type": "multiple",
-                    "points": 20,
-                    "options": [
-                        {"text": "Целые числа (int)", "is_correct": True},
-                        {"text": "Строки (string)", "is_correct": True},
-                        {"text": "Списки (list)", "is_correct": False},
-                        {"text": "Словари (dict)", "is_correct": False},
-                        {"text": "Логические значения (boolean)", "is_correct": True}
-                    ]
-                },
-                {
-                    "id": "q3",
-                    "text": "Напишите команду для вывода текста 'Hello, World!' в консоль на языке Python.",
-                    "type": "text",
-                    "points": 15,
-                    "correct_answer": "print(\"Hello, World!\")"
-                }
-            ]
-        }
     
     # Проверяем на ранее пройденный тест
     for result_id, result_data in test_results_db.items():
