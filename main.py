@@ -461,6 +461,10 @@ def login():
     
     return render_template('login.html')
 
+@app.route('/teacher/new_create_test')
+def teacher_new_create_test():
+    return render_template('teacher/new_create_test.html')
+
 @app.route('/dashboard')
 def dashboard():
     if 'logged_in' not in session or not session['logged_in']:
