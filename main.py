@@ -494,13 +494,9 @@ def logout():
     flash('Вы успешно вышли из системы', 'success')
     return redirect(url_for('login'))
 
-@app.route('/teacher/new_test_form')  # URL-адрес страницы
-def new_test_form():
-    return render_template('teacher/new_test_form.html') 
-
-@app.route('/teacher/new_test')  
-def new_test():
-    return render_template('teacher/new_test.html')  
+@app.route('/teacher/new_create_test')
+def teacher_new_create_test():
+    return render_template('teacher/new_create_test.html')
 
 @app.route('/teacher/new_create_test')  
 def new_create_test():
