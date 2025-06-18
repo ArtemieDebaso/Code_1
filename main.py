@@ -275,33 +275,33 @@ def create_test_quiz():
     if not tests_db:
         # Первый тест - присвоен только группе A-101
         tests_db["test1"] = {
-            "title": "Основы программирования",
-            "description": "Тест на знание основ программирования",
-            "category": "Программирование",
+            "title": "Основы SQL",
+            "description": "ест на знание базовых команд SQL",
+            "category": "Базы данных",
             "time_limit": 30,
             "visibility": "published",
             "created_by": "teacher",
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "questions": [
                 {
-                    "question": "Что такое переменная?",
+                    "question": "Какой оператор выбирает данные из таблицы?",
                     "options": [
-                        "Контейнер для хранения данных",
-                        "Математическая формула",
-                        "Тип данных",
-                        "Функция в программировании"
-                    ],
-                    "correct_answer": 0
-                },
-                {
-                    "question": "Какой язык программирования мы изучаем?",
-                    "options": [
-                        "Java",
-                        "Python",
-                        "C++",
-                        "JavaScript"
+                        "INSERT",
+                        "SELECT",
+                        "DELETE",
+                        "UPDATE"
                     ],
                     "correct_answer": 1
+                },
+                {
+                    "question": "Какой оператор добавляет новые записи в таблицу?",
+                    "options": [
+                        "ALTER",
+                        "CREATE",
+                        "INSERT,
+                        "ADD"
+                    ],
+                    "correct_answer": 2
                 }
             ],
             "assigned_to": {"groups": ["group1"], "students": []},
