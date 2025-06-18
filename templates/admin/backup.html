@@ -55,7 +55,7 @@
                         </tr>
                         <tr>
                             <th>Пользователи в базе</th>
-                            <td>{{ backup_data.users|length }</td>
+                            <td>{{ backup_data.users|length }}</td>
                         </tr>
                         <tr>
                             <th>Тесты в базе</th>
@@ -81,6 +81,9 @@
                 </div>
                 
                 <div class="mt-3 d-flex justify-content-end">
+                    <button class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-clipboard me-2"></i>Копировать в буфер обмена
+                    </button>
                     <button class="btn btn-outline-success btn-sm ms-2">
                         <i class="bi bi-download me-2"></i>Скачать JSON файл
                     </button>
