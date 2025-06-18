@@ -270,13 +270,13 @@ def create_test_groups():
         }
         logging.info("Тестовая группа создана: Группа D-401")
 
-# Создаем тестовые тесты
+#  Создание тестовых тестов
 def create_test_quiz():
     if not tests_db:
-        # Первый тест - присвоен только группе A-101
+        #  Тест - присвоен только группе A-101
         tests_db["test1"] = {
             "title": "Основы SQL",
-            "description": "ест на знание базовых команд SQL",
+            "description": "Тест на знание базовых команд SQL",
             "category": "Базы данных",
             "time_limit": 30,
             "visibility": "published",
@@ -298,8 +298,38 @@ def create_test_quiz():
                     "options": [
                         "ALTER",
                         "CREATE",
-                        "INSERT,
+                        "INSERT",
                         "ADD"
+                    ],
+                    "correct_answer": 2
+                },
+                {
+                    "question": "Какой оператор используется для фильтрации в WHERE?",
+                    "options": [
+                        "LIKE",
+                        "EQUAL",
+                        "MATCH",
+                        "FIND"
+                    ],
+                    "correct_answer": 0
+                },
+                {
+                    "question": "Как объединить данные из двух таблиц?",
+                    "options": [
+                        "MERGE",
+                        "UNION",
+                        "JOIN",
+                        "LINK"
+                    ],
+                    "correct_answer": 2
+                },
+                {
+                    "question": "Какая функция считает количество записей?",
+                    "options": [
+                        "SUM()",
+                        "AVG()",
+                        "COUNT()",
+                        "TOTAL()"
                     ],
                     "correct_answer": 2
                 }
