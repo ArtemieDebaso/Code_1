@@ -1004,11 +1004,6 @@ def student_take_test(test_id):
     
     username = session['username']
     
-@app.route('/teacher/new_create_test')
-def teacher_new_create_test():
-    return render_template('teacher/new_create_test.html')
-    
-    
     # Проверка, не проходил ли студент этот тест ранее
     existing_result = None
     for result_id, result in test_results_db.items():
