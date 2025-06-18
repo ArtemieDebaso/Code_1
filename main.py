@@ -270,68 +270,38 @@ def create_test_groups():
         }
         logging.info("Тестовая группа создана: Группа D-401")
 
-#  Создание тестовых тестов
+# Создаем тестовые тесты
 def create_test_quiz():
     if not tests_db:
-        #  Тест - присвоен только группе A-101
+        # Первый тест - присвоен только группе A-101
         tests_db["test1"] = {
-            "title": "Основы SQL",
-            "description": "Тест на знание базовых команд SQL",
-            "category": "Базы данных",
+            "title": "Основы программирования",
+            "description": "Тест на знание основ программирования",
+            "category": "Программирование",
             "time_limit": 30,
             "visibility": "published",
             "created_by": "teacher",
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "questions": [
                 {
-                    "question": "Какой оператор выбирает данные из таблицы?",
+                    "question": "Что такое переменная?",
                     "options": [
-                        "INSERT",
-                        "SELECT",
-                        "DELETE",
-                        "UPDATE"
-                    ],
-                    "correct_answer": 1
-                },
-                {
-                    "question": "Какой оператор добавляет новые записи в таблицу?",
-                    "options": [
-                        "ALTER",
-                        "CREATE",
-                        "INSERT",
-                        "ADD"
-                    ],
-                    "correct_answer": 2
-                },
-                {
-                    "question": "Какой оператор используется для фильтрации в WHERE?",
-                    "options": [
-                        "LIKE",
-                        "EQUAL",
-                        "MATCH",
-                        "FIND"
+                        "Контейнер для хранения данных",
+                        "Математическая формула",
+                        "Тип данных",
+                        "Функция в программировании"
                     ],
                     "correct_answer": 0
                 },
                 {
-                    "question": "Как объединить данные из двух таблиц?",
+                    "question": "Какой язык программирования мы изучаем?",
                     "options": [
-                        "MERGE",
-                        "UNION",
-                        "JOIN",
-                        "LINK"
+                        "Java",
+                        "Python",
+                        "C++",
+                        "JavaScript"
                     ],
-                    "correct_answer": 2
-                },
-                {
-                    "question": "Какая функция считает количество записей?",
-                    "options": [
-                        "SUM()",
-                        "AVG()",
-                        "COUNT()",
-                        "TOTAL()"
-                    ],
-                    "correct_answer": 2
+                    "correct_answer": 1
                 }
             ],
             "assigned_to": {"groups": ["group1"], "students": []},
